@@ -74,13 +74,15 @@ class Tasklist(Resource):
 		finished_percent = args['finished_percent']
 		user_id = args['user_id']
 		remark = args['remark']
+		# print(planfinished_time)
+		# print(type(planfinished_time))
 		task = Task(task_type=task_type,
 					pdt_id=pdt_id,
 					content=content,
 					planfinished_time=planfinished_time,
-					finished_time="null",
+					finished_time="2019-10-10",
 					finished_percent=finished_percent,
-					create_time= datetime.datetime.now(),
+					create_time= "2019-08-29",
 					user_id=user_id,
 					remark=remark)
 		task.add_to_db()

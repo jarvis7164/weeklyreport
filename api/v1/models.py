@@ -166,10 +166,13 @@ class Task(db.Model):
 	content = db.Column(db.String(1024))
 	task_type = db.Column(db.SmallInteger, default=0)
 	pdt_id = db.Column(db.Integer)
-	planfinished_time = db.Column(db.DateTime)
-	finished_time = db.Column(db.DateTime)
+	# planfinished_time = db.Column(db.DateTime)
+	planfinished_time = db.Column(db.String(20))
+	# finished_time = db.Column(db.DateTime)
+	finished_time = db.Column(db.String(20))
 	finished_percent= db.Column(db.String(10))
-	create_time = db.Column(db.DateTime)
+	# create_time = db.Column(db.DateTime)
+	create_time = db.Column(db.String(20))
 	user_id = db.Column(db.Integer)
 	remark = db.Column(db.String(1024))
 	deviation = db.Column(db.String(10))
@@ -177,6 +180,7 @@ class Task(db.Model):
 
 	def __init__(self, content, task_type, pdt_id, planfinished_time, finished_time, finished_percent,
 				create_time, user_id, remark):
+
 		self.content = content
 		self.task_type = task_type
 		self.pdt_id = pdt_id
