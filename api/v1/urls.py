@@ -17,4 +17,4 @@ api.add_resource(DepartmentList, '/api/v1/departments')
 api.add_resource(ProductList, '/api/v1/products')
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	app.run(host='0.0.0.0', port=5000,debug=True)
