@@ -45,6 +45,7 @@ parser_task.add_argument('planfinished_time', type=str)
 parser_task.add_argument('finished_percent', type=str)
 # parser_addtask.add_argument('create_time', type=str)
 parser_task.add_argument('user_id', type=int)
+parser_task.add_argument('user_name', type=str)
 parser_task.add_argument('remark', type=str)
 parser_task.add_argument('delete_flag', type=int)
 
@@ -76,7 +77,8 @@ resource_task_fields = {
 	'finished_percent':fields.String,
 	'create_time':fields.String,
 	'user_id':fields.Integer,
-	'remark':fields.String
+	'remark':fields.String,
+	'delete_flag':fields.String
 }
 
 resource_user_fields = {

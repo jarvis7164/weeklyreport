@@ -74,22 +74,22 @@ class Tasklist(Resource):
 		finished_percent = args['finished_percent']
 		user_id = args['user_id']
 		remark = args['remark']
+		creat_time = datetime.datetime.now()
 		# print(planfinished_time)
 		# print(type(planfinished_time))
 		task = Task(task_type=task_type,
 					pdt_id=pdt_id,
 					content=content,
 					planfinished_time=planfinished_time,
-					finished_time="2019-10-10",
 					finished_percent=finished_percent,
-					create_time= "2019-08-29",
+					create_time= creat_time,
 					user_id=user_id,
 					remark=remark)
 		task.add_to_db()
 		if (task.task_id is None):
-			return return_false_json("插入失败")
+			return return_false_json("任务插入失败")
 		else:
-			return return_true_json("新增成功")
+			return return_true_json("任务新增成功")
 
 	def put(self):
 		args = parser_task.parse_args()
@@ -112,7 +112,6 @@ class Tasklist(Resource):
 		task.remark = remark
 		Task.commit(self)
 		return return_true_json("任务更新成功")
-
 
 	def get(self):
 		datas = Task.find_all()

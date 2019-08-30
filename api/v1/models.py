@@ -58,7 +58,7 @@ class User(db.Model):
 
 	@classmethod
 	def find_all(cls):
-		return cls.query.filter().all()
+		return cls.query.filter(User.delete_flag==0).all()
 
 	def commit(self):
 		db.session.commit()
@@ -178,14 +178,14 @@ class Task(db.Model):
 	deviation = db.Column(db.String(10))
 	delete_flag = db.Column(db.SmallInteger, default=0)
 
-	def __init__(self, content, task_type, pdt_id, planfinished_time, finished_time, finished_percent,
+	def __init__(self, content, task_type, pdt_id, planfinished_time, finished_percent,
 				create_time, user_id, remark):
 
 		self.content = content
 		self.task_type = task_type
 		self.pdt_id = pdt_id
 		self.planfinished_time = planfinished_time
-		self.finished_time = finished_time
+		# self.finished_time = finished_time
 		self.finished_percent = finished_percent
 		self.create_time = create_time
 		self.user_id = user_id
@@ -196,7 +196,7 @@ class Task(db.Model):
 
 	@classmethod
 	def find_all(cls):
-		return cls.query.filter().all()
+		return cls.query.filter(Task.delete_flag==0).all()
 
 	def add_to_db(self):
 		try:
