@@ -115,6 +115,29 @@ class Tasklist(Resource):
 
 	def get(self):
 		datas = Task.find_all()
+		print(datas)
+		print(type(datas))
+		print(datas)
+		print(type(datas))
+		# als = []
+		# for i in range(len(datas)):
+		# 	to_json = {'task_id': datas[i].task_id,
+		# 			   'content': datas[i].content,
+		# 			   'task_type': datas[i].task_type,
+		# 			   'pdt_id': datas[i].pdt_id,
+		# 			   'planfinished_time': datas[i].planfinished_time,
+		# 			   'finished_time': datas[i].finished_time,
+		# 			   'finished_percent': datas[i].finished_percent,
+		# 			   'create_time': datas[i].create_time,
+		# 			   'user_id': datas[i].user_id,
+		# 			   'remark': datas[i].remark,
+		# 			   'deviation': datas[i].deviation,
+		# 			   'delete_flag': datas[i].delete_flag,
+		# 			   'user_name': Task.query_user(datas[i].user_id)['user_name']
+		# 			   }
+		# 	als.append(to_json)
+		# return als
+
 		res = [marshal(data,resource_task_fields) for data in datas]
 		if datas:
 			return return_true_json(res)

@@ -9,6 +9,7 @@
 from flask import Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import and_
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')  # 定义静态文件的名字和目录
 CORS(app, supports_credentials=True)  # 处理跨域问题
@@ -193,6 +194,9 @@ class Task(db.Model):
 
 	def query_task_id(self):
 		return Task.query.filter(Task.task_id == self).first()
+
+	def query_user(user_id):
+		return User.query.filter(and_(User.delete_flag==0,User.user_id==user_id)).all()
 
 	@classmethod
 	def find_all(cls):
