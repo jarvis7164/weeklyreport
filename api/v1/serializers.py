@@ -78,7 +78,9 @@ resource_task_fields = {
 	'create_time':fields.String,
 	'user_id':fields.Integer,
 	'remark':fields.String,
-	'delete_flag':fields.String
+	'deviation':fields.String,
+	'delete_flag':fields.String,
+	'user_name':fields.String
 }
 
 resource_user_fields = {

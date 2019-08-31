@@ -25,7 +25,7 @@ class User(db.Model):
 	password = db.Column(db.String(20))
 	user_name = db.Column(db.String(20))
 	create_account = db.Column(db.String(20))
-	create_time = db.Column(db.DateTime)
+	create_time = db.Column(db.String(20))
 	role_id = db.Column(db.Integer)
 	dept_id = db.Column(db.Integer)
 	status = db.Column(db.SmallInteger,default=0)
@@ -195,8 +195,8 @@ class Task(db.Model):
 	def query_task_id(self):
 		return Task.query.filter(Task.task_id == self).first()
 
-	def query_user(user_id):
-		return User.query.filter(and_(User.delete_flag==0,User.user_id==user_id)).all()
+	def query_user_name(user_id):
+		return User.query.filter(and_(User.delete_flag==0,User.user_id==user_id)).first()
 
 	@classmethod
 	def find_all(cls):

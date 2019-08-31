@@ -6,7 +6,7 @@
 # @Software: PyCharm
 # @Contact : 309194437@qq.com
 """数据库相关配置"""
-SQLALCHEMY_DATABASE_URI = "mysql+pymysql://test:123456@192.168.1.16:3306/weeklyreport?charset=UTF8MB4"
+SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:123456@127.0.0.1:3306/weeklyreport?charset=UTF8MB4"
 
 # SQLAlchemy 将会记录所有发到标准输出(stderr)的语句，这对调试很有帮助。
 SQLALCHEMY_ECHO = True

@@ -29,25 +29,26 @@ def return_false_json(data):
 		"msg":"request failed"
 	})
 
+#日期格式转换，讲string格式日期转换成datatime格式
+def str_to_datatime(time_str):
+	time_list = time_str[0:10].split("-")
+	year = time_list[0]
+	month = time_list[1]
+	day = time_list[2]
+	return datetime.date(int(year), int(month), int(day))
+
+#计算预期天数
+def get_diviation(planfinished_time,finished_time):
+	if finished_time:
+		diviation = (str_to_datatime(finished_time) - str_to_datatime(planfinished_time)).days
+		return diviation
+	else:
+		return None
+
 """定义资源"""
 class Hello(Resource):
 	def get(self):
 		return 'Hello Flask-restful!'
-
-#用户登录接口
-# class Login(Resource):
-# 	# def get(self):
-# 	# 	return "登录成功"
-# 	def post(self):
-# 		args = parser_login.parse_args()
-# 		account =User.query_account(args['account'])
-# 		print(type(account))
-# 		password = args['password']
-# 		print(password)
-# 		if account and password==account.password:
-# 			return return_true_json('{"msg":"登录成功"}')
-# 		else:
-# 			return return_false_json('{"msg":"账号密码错误"}')
 
 class Login(Resource):
 	def post(self):
@@ -117,29 +118,27 @@ class Tasklist(Resource):
 		datas = Task.find_all()
 		print(datas)
 		print(type(datas))
-		print(datas)
-		print(type(datas))
-		# als = []
-		# for i in range(len(datas)):
-		# 	to_json = {'task_id': datas[i].task_id,
-		# 			   'content': datas[i].content,
-		# 			   'task_type': datas[i].task_type,
-		# 			   'pdt_id': datas[i].pdt_id,
-		# 			   'planfinished_time': datas[i].planfinished_time,
-		# 			   'finished_time': datas[i].finished_time,
-		# 			   'finished_percent': datas[i].finished_percent,
-		# 			   'create_time': datas[i].create_time,
-		# 			   'user_id': datas[i].user_id,
-		# 			   'remark': datas[i].remark,
-		# 			   'deviation': datas[i].deviation,
-		# 			   'delete_flag': datas[i].delete_flag,
-		# 			   'user_name': Task.query_user(datas[i].user_id)['user_name']
-		# 			   }
-		# 	als.append(to_json)
-		# return als
+		als = []
+		for i in range(len(datas)):
+			to_json = {'task_id': datas[i].task_id,
+					   'content': datas[i].content,
+					   'task_type': datas[i].task_type,
+					   'pdt_id': datas[i].pdt_id,
+					   'planfinished_time': datas[i].planfinished_time,
+					   'finished_time': datas[i].finished_time,
+					   'finished_percent': datas[i].finished_percent,
+					   'create_time': datas[i].create_time,
+					   'user_id': datas[i].user_id,
+					   'remark': datas[i].remark,
+					   'deviation': get_diviation(datas[i].planfinished_time,datas[i].finished_time),
+					   'delete_flag': datas[i].delete_flag,
+					   'user_name': Task.query_user_name(datas[i].user_id).user_name
+					   }
+			als.append(to_json)
+		return als
 
-		res = [marshal(data,resource_task_fields) for data in datas]
-		if datas:
+		res = [marshal(al,resource_task_fields) for al in als]
+		if res:
 			return return_true_json(res)
 		else:
 			return return_false_json(res)
