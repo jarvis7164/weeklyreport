@@ -11,6 +11,7 @@ from api.v1.views import *
 api.add_resource(Hello, '/')
 api.add_resource(Login, '/api/v1/login')
 api.add_resource(Tasklist, '/api/v1/task')
+api.add_resource(QueryTasklist, '/api/v1/task/query')
 api.add_resource(UserList, '/api/v1/users')
 api.add_resource(RoleList, '/api/v1/roles')
 api.add_resource(DepartmentList, '/api/v1/departments')

@@ -8,7 +8,7 @@
 """接口实现"""
 import datetime
 
-from flask import jsonify
+from flask import jsonify, request
 from flask_restful import Resource, Api, marshal
 # from flask_restful import reqparse # 用于请求的参数解析
 from api.v1.models import app, Role, User, Task, Department, Product
@@ -165,6 +165,32 @@ class Tasklist(Resource):
         Task.commit(self)
         return return_true_json("删除成功")
 
+#条件查询接口
+class QueryTasklist(Resource):
+    def get(self):
+        # user_name = request.args.get('user_name')
+        # task_type = request.args.get('task_type')
+        # pdt_id = request.args.get('pdt_id')
+        # finished_time = request.args.get('finished_time')
+        filter = []
+        if ('user_name' in request.args) and (request.args['user_name']):
+            user_name = request.args['user_name']
+            filter.append(User.user_name== user_name)
+        if ('task_type' in request.args) and (request.args['task_type']):
+            task_type = request.args['task_type']
+            filter.append(Task.task_type == task_type)
+        # if ('startDate' in request.args) and (request.args['startDate']):
+        #     startDate = request.args['startDate']
+        #     filter.append(db.cast(Task.finished_time, db.DATE) >= db.cast(startDate, db.Date))
+        # if ('endDate' in request.args) and (request.args['endDate']):
+        #     endDate = request.args['endDate']
+        #     filter.append(db.cast(Task.finished_time, db.DATE) <= db.cast(endDate, db.Date))
+        datas = Task.query.filter(Task.user_id==User.user_id).filter(*filter).all()
+        datas = [marshal(data, resource_task_fields) for data in datas]
+        if datas:
+            return return_true_json(datas)
+        else:
+            return return_false_json(datas)
 
 class UserList(Resource):
     def post(self):
