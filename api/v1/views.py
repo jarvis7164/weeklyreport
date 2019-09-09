@@ -11,6 +11,8 @@ import datetime
 from flask import jsonify, request
 from flask_restful import Resource, Api, marshal
 # from flask_restful import reqparse # 用于请求的参数解析
+from sqlalchemy.orm import session
+
 from api.v1.models import app, Role, User, Task, Department, Product
 from api.v1.serializers import *
 
@@ -65,15 +67,18 @@ class Login(Resource):
     def post(self):
         args = parser_login.parse_args()
         account = User.query_account(args['account'])
-        res = [marshal(account, resource_user_fields)]
+        # res = [marshal(account, resource_user_fields)]
         print(type(account))
         password = args['password']
+        print(account)
         print(password)
-        if account and password == account.password:
-            return return_true_json(res)
+        if args['account'] and password:
+            if account and password == account.password:
+                return return_true_json("登录成功")
+            else:
+                return return_false_json("用户名密码错误")
         else:
-            return return_false_json(res)
-
+            return return_false_json("用户名密码不能为空")
 
 # 任务列表接口
 class Tasklist(Resource):
@@ -179,13 +184,20 @@ class QueryTasklist(Resource):
         if ('task_type' in request.args) and (request.args['task_type']):
             task_type = request.args['task_type']
             filter.append(Task.task_type == task_type)
-        # if ('startDate' in request.args) and (request.args['startDate']):
-        #     startDate = request.args['startDate']
-        #     filter.append(db.cast(Task.finished_time, db.DATE) >= db.cast(startDate, db.Date))
-        # if ('endDate' in request.args) and (request.args['endDate']):
-        #     endDate = request.args['endDate']
-        #     filter.append(db.cast(Task.finished_time, db.DATE) <= db.cast(endDate, db.Date))
-        datas = Task.query.filter(Task.user_id==User.user_id).filter(*filter).all()
+        if ('pdt_id' in request.args) and (request.args['pdt_id']):
+            pdt_id = request.args['pdt_id']
+            filter.append(Product.pdt_id == pdt_id)
+        if ('startDate' in request.args) and (request.args['startDate']):
+            startDate = request.args['startDate']
+            # filter.append(db.cast(Task.finished_time, db.DATE) >= db.cast(startDate, db.Date))
+            filter.append(Task.finished_time>= startDate)
+        if ('endDate' in request.args) and (request.args['endDate']):
+            endDate = request.args['endDate']
+            # filter.append(db.cast(Task.finished_time, db.DATE) <= db.cast(endDate, db.Date))
+            filter.append(Task.finished_time<= endDate)
+        # datas = Task.query.filter(Task.user_id==User.user_id).filter(Task.pdt_id==Product.pdt_id).filter(*filter).all()
+        datas = Task.query.join(User,Task.user_id==User.user_id).filter(*filter).all()
+        print(datas)
         datas = [marshal(data, resource_task_fields) for data in datas]
         if datas:
             return return_true_json(datas)
@@ -233,7 +245,7 @@ class UserList(Resource):
         args = parser_user.parse_args()
         user_id = args['user_id']
         account = args['account']
-        password = args['password']
+        # password = args['password']
         user_name = args['user_name']
         role_id = args['role_id']
         dept_id = args['dept_id']
@@ -241,7 +253,7 @@ class UserList(Resource):
 
         user = User.query_user_id(user_id)
         user.account = account
-        user.password = password
+        # user.password = password
         user.user_name = user_name
         user.role_id = role_id
         user.dept_id = dept_id
