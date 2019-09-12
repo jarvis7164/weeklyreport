@@ -195,8 +195,8 @@ class QueryTasklist(Resource):
             endDate = request.args['endDate']
             # filter.append(db.cast(Task.finished_time, db.DATE) <= db.cast(endDate, db.Date))
             filter.append(Task.finished_time<= endDate)
-        # datas = Task.query.filter(Task.user_id==User.user_id).filter(Task.pdt_id==Product.pdt_id).filter(*filter).all()
-        datas = Task.query.join(User,Task.user_id==User.user_id).filter(*filter).all()
+        datas = Task.query.filter(Task.user_id==User.user_id).filter(Task.pdt_id==Product.pdt_id).filter(Task.delete_flag==0).filter(*filter).all()
+        # datas = Task.query.join(User,Task.user_id==User.user_id).filter(Task.delete_flag==0).filter(*filter).all()
         als = []
         # 把user_name字段加入到datas的返回数据中
         for i in range(len(datas)):
@@ -412,3 +412,30 @@ class Dictitem_query(Resource):
             return return_true_json(res)
         else:
             return return_false_json(res)
+
+    def post(self):
+        args = parser_dictitem.parse_args()
+        dict_code = args['dict_code']
+        dict_name = args['dict_name']
+        key_value = args['key_value']
+        dictitem = Dictitem(dict_code=dict_code,dict_name=dict_name,key_value=key_value)
+        dictitem.add_to_db()
+        return return_true_json("新增成功")
+
+    # def put(self):
+    #     args = parser_role.parse_args()
+    #     role_id = args['role_id']
+    #     role_name = args['role_name']
+    #
+    #     role = Role.find_by_id(role_id)
+    #     role.role_name = role_name
+    #     Role.commit(self)
+    #     return return_true_json("角色更新成功")
+    #
+    # def delete(self):
+    #     args = parser_role.parse_args()
+    #     role_id = args['role_id']
+    #
+    #     role = Role.find_by_id(role_id)
+    #     Role.delete(role)
+    #     return return_true_json("删除成功")

@@ -49,6 +49,11 @@ parser_task.add_argument('user_name', type=str)
 parser_task.add_argument('remark', type=str)
 parser_task.add_argument('delete_flag', type=int)
 
+parser_dictitem = reqparse.RequestParser()
+parser_dictitem.add_argument('id',type=int)
+parser_dictitem.add_argument('dict_code',type=str)
+parser_dictitem.add_argument('dict_name',type=str)
+parser_dictitem.add_argument('key_value',type=str)
 
 
 """序列化返回结果"""

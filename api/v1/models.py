@@ -224,12 +224,12 @@ class Dictitem(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
     dict_code = db.Column(db.String(20))
     dict_name = db.Column(db.String(64))
-    keyvalue = db.Column(db.String(1024))
+    key_value = db.Column(db.String(1024))
 
-    def __init__(self, dict_code,dict_name,keyvalue):
+    def __init__(self, dict_code,dict_name,key_value):
         self.dict_code = dict_code
         self.dict_name = dict_name
-        self.keyvalue = keyvalue
+        self.key_value = key_value
 
     @classmethod
     def find_all(cls):
@@ -238,13 +238,10 @@ class Dictitem(db.Model):
     def query_dict_code(dict_code):
         return Dictitem.query.filter(Dictitem.dict_code == dict_code).first()
 
-    # def add_to_db(self):
-    #     try:
-    #         db.session.add(self)
-    #         db.session.commit()
-    #     except:
-    #         db.session.rollback()
-    #         db.session.flush()
-    #
-    # def commit(self):
-    #     db.session.commit()
+    def add_to_db(self):
+        try:
+            db.session.add(self)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            db.session.flush()
