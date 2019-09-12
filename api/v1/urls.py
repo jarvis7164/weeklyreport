@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Time    : 2019/8/23 9:52
-# @Author  : Zhangyp
+# @Author  : jarvis7164
 # @File    : urls.py
 # @Software: PyCharm
 # @license : Copyright(C), eWord Technology Co., Ltd.
@@ -16,6 +16,8 @@ api.add_resource(UserList, '/api/v1/users')
 api.add_resource(RoleList, '/api/v1/roles')
 api.add_resource(DepartmentList, '/api/v1/departments')
 api.add_resource(ProductList, '/api/v1/products')
+api.add_resource(DictitemList, '/api/v1/dictitem')
+api.add_resource(Dictitem_query, '/api/v1/dictitem/query')
 
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', port=5000,debug=True)

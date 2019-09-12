@@ -11,9 +11,9 @@ import datetime
 from flask import jsonify, request
 from flask_restful import Resource, Api, marshal
 # from flask_restful import reqparse # 用于请求的参数解析
-from sqlalchemy.orm import session
+# from sqlalchemy.orm import session
 
-from api.v1.models import app, Role, User, Task, Department, Product
+from api.v1.models import app, Role, User, Task, Department, Product,Dictitem
 from api.v1.serializers import *
 
 api = Api(app)
@@ -197,12 +197,29 @@ class QueryTasklist(Resource):
             filter.append(Task.finished_time<= endDate)
         # datas = Task.query.filter(Task.user_id==User.user_id).filter(Task.pdt_id==Product.pdt_id).filter(*filter).all()
         datas = Task.query.join(User,Task.user_id==User.user_id).filter(*filter).all()
-        print(datas)
-        datas = [marshal(data, resource_task_fields) for data in datas]
-        if datas:
-            return return_true_json(datas)
+        als = []
+        # 把user_name字段加入到datas的返回数据中
+        for i in range(len(datas)):
+            to_json = {'task_id': datas[i].task_id,
+                       'content': datas[i].content,
+                       'task_type': datas[i].task_type,
+                       'pdt_id': datas[i].pdt_id,
+                       'planfinished_time': datas[i].planfinished_time,
+                       'finished_time': datas[i].finished_time,
+                       'finished_percent': datas[i].finished_percent,
+                       'create_time': datas[i].create_time,
+                       'user_id': datas[i].user_id,
+                       'remark': datas[i].remark,
+                       'deviation': get_diviation(datas[i].planfinished_time, datas[i].finished_time),
+                       'delete_flag': datas[i].delete_flag,
+                       'user_name': Task.query_user_name(datas[i].user_id).user_name
+                       }
+            als.append(to_json)
+        als = [marshal(al, resource_task_fields) for al in als]
+        if als:
+            return return_true_json(als)
         else:
-            return return_false_json(datas)
+            return return_false_json(als)
 
 class UserList(Resource):
     def post(self):
@@ -375,3 +392,23 @@ class ProductList(Resource):
         product = Product.find_by_id(pdt_id)
         Product.delete(product)
         return return_true_json("产品删除成功")
+
+class DictitemList(Resource):
+    def get(self):
+        datas = Dictitem.find_all()
+        res = [marshal(data, resource_dictitem_fields) for data in datas]
+        if datas:
+            return return_true_json(res)
+        else:
+            return return_false_json(res)
+
+#按照字典代码查询返回
+class Dictitem_query(Resource):
+    def get(self):
+        dict_code = request.args['dict_code']
+        datas = Dictitem.query_dict_code(dict_code)
+        res = [marshal(datas, resource_dictitem_fields)]
+        if datas:
+            return return_true_json(res)
+        else:
+            return return_false_json(res)

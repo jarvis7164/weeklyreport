@@ -95,3 +95,10 @@ resource_user_fields = {
 	'status':fields.Integer,
 	'delete_flag':fields.Integer
 }
+
+resource_dictitem_fields = {
+	'id':fields.Integer,
+	'dict_code':fields.String,
+	'dict_name':fields.String,
+	'keyvalue':fields.String,
+}
