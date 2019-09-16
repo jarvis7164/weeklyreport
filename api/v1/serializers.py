@@ -24,6 +24,8 @@ parser_login.add_argument('account',type=str,required=True)
 parser_login.add_argument('password',type=str,required=True)
 
 parser_role = reqparse.RequestParser()
+parser_role.add_argument('page',type=int)
+parser_role.add_argument('per_page',type=int)
 parser_role.add_argument('role_name',type=str)
 parser_role.add_argument('role_id',type=int)
 
@@ -105,5 +107,5 @@ resource_dictitem_fields = {
 	'id':fields.Integer,
 	'dict_code':fields.String,
 	'dict_name':fields.String,
-	'keyvalue':fields.String,
+	'key_value':fields.String,
 }

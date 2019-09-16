@@ -94,9 +94,14 @@ class Role(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    # @classmethod
+    # def find_all(cls):
+    #     return cls.query.filter().all()
+
+    #增加分页查询
     @classmethod
-    def find_all(cls):
-        return cls.query.filter().all()
+    def find_all(cls,page,per_page):
+        return cls.query.order_by('role_id').paginate(page,per_page,error_out=False)
 
     def commit(self):
         db.session.commit()
@@ -235,6 +240,10 @@ class Dictitem(db.Model):
     def find_all(cls):
         return cls.query.filter().all()
 
+    @classmethod
+    def find_by_id(cls, id):
+        return cls.query.get(id)
+
     def query_dict_code(dict_code):
         return Dictitem.query.filter(Dictitem.dict_code == dict_code).first()
 
@@ -245,3 +254,10 @@ class Dictitem(db.Model):
         except:
             db.session.rollback()
             db.session.flush()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    def commit(self):
+        db.session.commit()

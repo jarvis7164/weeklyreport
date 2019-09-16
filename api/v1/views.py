@@ -291,7 +291,12 @@ class UserList(Resource):
 
 class RoleList(Resource):
     def get(self):
-        datas = Role.find_all()
+        args = parser_role.parse_args()
+        page = args['page']
+        per_page = args['per_page']
+        # datas = Role.find_all()
+        paginates = Role.find_all(page,per_page)
+        datas = paginates.items
         res = [marshal(data, resource_role_fields) for data in datas]
         if datas:
             return return_true_json(res)
@@ -422,20 +427,24 @@ class Dictitem_query(Resource):
         dictitem.add_to_db()
         return return_true_json("新增成功")
 
-    # def put(self):
-    #     args = parser_role.parse_args()
-    #     role_id = args['role_id']
-    #     role_name = args['role_name']
-    #
-    #     role = Role.find_by_id(role_id)
-    #     role.role_name = role_name
-    #     Role.commit(self)
-    #     return return_true_json("角色更新成功")
-    #
-    # def delete(self):
-    #     args = parser_role.parse_args()
-    #     role_id = args['role_id']
-    #
-    #     role = Role.find_by_id(role_id)
-    #     Role.delete(role)
-    #     return return_true_json("删除成功")
+    def put(self):
+        args = parser_dictitem.parse_args()
+        id = args['id']
+        dict_code = args['dict_code']
+        dict_name = args['dict_name']
+        key_value = args['key_value']
+
+        dictitem = Dictitem.find_by_id(id)
+        dictitem.dict_code = dict_code
+        dictitem.dict_name = dict_name
+        dictitem.key_value = key_value
+        Dictitem.commit(self)
+        return return_true_json("数据字典更新成功")
+
+    def delete(self):
+        args = parser_dictitem.parse_args()
+        id = args['id']
+
+        dictitem = Dictitem.find_by_id(id)
+        Dictitem.delete(dictitem)
+        return return_true_json("删除成功")
