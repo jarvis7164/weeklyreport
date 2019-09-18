@@ -36,8 +36,8 @@ def return_page_true_json(data,page,pages,per_page,has_prev,has_next,total):
         "page":page,
         "pages":pages,
         "per_page":per_page,
-        "per_prev":has_prev,
-        "per_next":has_next,
+        "has_prev":has_prev,
+        "has_next":has_next,
         "total":total,
         "msg": "request successfully"
     })
@@ -57,8 +57,8 @@ def return_page_false_json(data,page,pages,per_page,has_prev,has_next,total):
         "page":page,
         "pages":pages,
         "per_page":per_page,
-        "per_prev":has_prev,
-        "per_next":has_next,
+        "has_prev":has_prev,
+        "has_next":has_next,
         "total":total,
         "msg": "request failed"
     })
@@ -108,7 +108,14 @@ class Login(Resource):
         print(password)
         if args['account'] and password:
             if account and password == account.password:
-                return return_true_json("登录成功")
+                # return return_true_json("登录成功")
+                return jsonify({
+                    "status": 1,
+                    "data": "登录成功",
+                    "user_id":account.user_id,
+                    "user_name":account.user_name,
+                    "msg": "request successfully"
+                })
             else:
                 return return_false_json("用户名密码错误")
         else:
@@ -203,7 +210,7 @@ class Tasklist(Resource):
         if res:
             return return_page_true_json(res,page,pages,per_page,has_prev,has_next,total)
         else:
-            return return_page_false_json(res)
+            return return_page_false_json(res,page,pages,per_page,has_prev,has_next,total)
 
     def delete(self):
         args = parser_task.parse_args()

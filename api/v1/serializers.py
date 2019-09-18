@@ -67,7 +67,7 @@ resource_role_fields = {
 }
 
 resource_product_fields = {
-	'product_id':fields.Integer,
+	'pdt_id':fields.Integer,
 	'product_name':fields.String
 }
 
