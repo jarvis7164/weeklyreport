@@ -6,9 +6,10 @@
 # @Software: PyCharm
 # @Contact : 309194437@qq.com
 """接口实现"""
+import ast
 import datetime
 
-from flask import jsonify, request
+from flask import jsonify, request, json
 from flask_restful import Resource, Api, marshal
 # from flask_restful import reqparse # 用于请求的参数解析
 # from sqlalchemy.orm import session
@@ -28,6 +29,39 @@ def return_true_json(data):
         "msg": "request successfully"
     })
 
+def return_page_true_json(data,page,pages,per_page,has_prev,has_next,total):
+    return jsonify({
+        "status": 1,
+        "data": data,
+        "page":page,
+        "pages":pages,
+        "per_page":per_page,
+        "per_prev":has_prev,
+        "per_next":has_next,
+        "total":total,
+        "msg": "request successfully"
+    })
+
+
+def return_false_json(data):
+    return jsonify({
+        "status": 0,
+        "data": data,
+        "msg": "request failed"
+    })
+
+def return_page_false_json(data,page,pages,per_page,has_prev,has_next,total):
+    return jsonify({
+        "status": 0,
+        "data": data,
+        "page":page,
+        "pages":pages,
+        "per_page":per_page,
+        "per_prev":has_prev,
+        "per_next":has_next,
+        "total":total,
+        "msg": "request failed"
+    })
 
 def return_false_json(data):
     return jsonify({
@@ -131,9 +165,20 @@ class Tasklist(Resource):
         return return_true_json("任务更新成功")
 
     def get(self):
-        datas = Task.find_all()
-        print(datas)
-        print(type(datas))
+        args = parser_task.parse_args()
+        page = args['page']
+        per_page = args['per_page']
+        # datas = Task.find_all()
+        paginates = Task.find_all(page, per_page)
+        datas = paginates.items
+        page = paginates.page
+        pages = paginates.pages
+        per_page = paginates.per_page
+        has_prev = paginates.has_prev
+        has_next = paginates.has_next
+        total = paginates.total
+        # print(datas)
+        # print(type(datas))
         als = []
         #把user_name字段加入到task的返回数据中
         for i in range(len(datas)):
@@ -156,9 +201,9 @@ class Tasklist(Resource):
 
         res = [marshal(al, resource_task_fields) for al in als]
         if res:
-            return return_true_json(res)
+            return return_page_true_json(res,page,pages,per_page,has_prev,has_next,total)
         else:
-            return return_false_json(res)
+            return return_page_false_json(res)
 
     def delete(self):
         args = parser_task.parse_args()
@@ -422,7 +467,16 @@ class Dictitem_query(Resource):
         args = parser_dictitem.parse_args()
         dict_code = args['dict_code']
         dict_name = args['dict_name']
-        key_value = args['key_value']
+        # key_value = json.dumps(args['key_value'],ensure_ascii=False)
+        #将key_value获取的数组数据转成dict再重新生成数组序列
+        key_value_old = args['key_value']
+        key_value = []
+        for i in range(len(key_value_old)):
+            value = ast.literal_eval(key_value_old[i])
+            key_value.append(value)
+        key_value = json.dumps(key_value,ensure_ascii=False)
+        print(key_value,type(key_value))
+
         dictitem = Dictitem(dict_code=dict_code,dict_name=dict_name,key_value=key_value)
         dictitem.add_to_db()
         return return_true_json("新增成功")
@@ -432,7 +486,8 @@ class Dictitem_query(Resource):
         id = args['id']
         dict_code = args['dict_code']
         dict_name = args['dict_name']
-        key_value = args['key_value']
+        # key_value = args['key_value']
+        key_value = json.dumps(args['key_value'], ensure_ascii=False)
 
         dictitem = Dictitem.find_by_id(id)
         dictitem.dict_code = dict_code

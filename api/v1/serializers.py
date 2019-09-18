@@ -38,6 +38,8 @@ parser_product.add_argument('pdt_id',type=int)
 parser_product.add_argument('product_name',type=str)
 
 parser_task = reqparse.RequestParser()
+parser_task.add_argument('page',type=int)
+parser_task.add_argument('per_page',type=int)
 parser_task.add_argument('task_id', type=int)
 parser_task.add_argument('content', type=str)
 parser_task.add_argument('task_type', type=int)
@@ -55,8 +57,8 @@ parser_dictitem = reqparse.RequestParser()
 parser_dictitem.add_argument('id',type=int)
 parser_dictitem.add_argument('dict_code',type=str)
 parser_dictitem.add_argument('dict_name',type=str)
-parser_dictitem.add_argument('key_value',type=str)
-
+parser_dictitem.add_argument('key_value',type=str,action='append')
+# parser_dictitem.add_argument('key_value',type=str)
 
 """序列化返回结果"""
 resource_role_fields = {

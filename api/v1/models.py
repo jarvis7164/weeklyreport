@@ -208,9 +208,14 @@ class Task(db.Model):
     def query_user_name(user_id):
         return User.query.filter(and_(User.delete_flag == 0, User.user_id == user_id)).first()
 
+    # @classmethod
+    # def find_all(cls):
+    #     return cls.query.filter(Task.delete_flag == 0).all()
+
+    #分页查询
     @classmethod
-    def find_all(cls):
-        return cls.query.filter(Task.delete_flag == 0).all()
+    def find_all(cls, page, per_page):
+        return cls.query.order_by('task_id').filter(Task.delete_flag == 0).paginate(page, per_page, error_out=False)
 
     def add_to_db(self):
         try:
