@@ -63,15 +63,17 @@ def return_page_false_json(data,page,pages,per_page,has_prev,has_next,total):
         "msg": "request failed"
     })
 
-def return_false_json(data):
-    return jsonify({
-        "status": 0,
-        "data": data,
-        "msg": "request failed"
-    })
+
+#获取列表里面的字典的值方法
+def get_dict_name(list,key):
+    for i in list:
+        print(i,type(i),i["key"])
+        if i["key"] == key:
+            return i["value"]
+            break
 
 
-# 日期格式转换，讲string格式日期转换成datatime格式
+# 日期格式转换，将string格式日期转换成datatime格式
 def str_to_datatime(time_str):
     time_list = time_str[0:10].split("-")
     year = time_list[0]
@@ -184,15 +186,26 @@ class Tasklist(Resource):
         has_prev = paginates.has_prev
         has_next = paginates.has_next
         total = paginates.total
+        rwlx_value = Dictitem.query.filter(Dictitem.dict_code == 'rwlx').first().key_value
         # print(datas)
         # print(type(datas))
+        # print(rwlx_value, type(rwlx_value))
+        l_rwlx_value = ast.literal_eval(rwlx_value)
+        # print(l_rwlx_value,type(l_rwlx_value))
+        # 合并字典（key值不能相同）
+        # d_rwlx_value = {}
+        # for i in l_rwlx_value:
+        #     d_rwlx_value = {**d_rwlx_value,**i}
+        # print(d_rwlx_value, type(d_rwlx_value))
         als = []
         #把user_name字段加入到task的返回数据中
         for i in range(len(datas)):
             to_json = {'task_id': datas[i].task_id,
                        'content': datas[i].content,
                        'task_type': datas[i].task_type,
+                       'task_type_name':get_dict_name(l_rwlx_value, datas[i].task_type),
                        'pdt_id': datas[i].pdt_id,
+                       'product_name': Product.find_by_id(datas[i].pdt_id).product_name,
                        'planfinished_time': datas[i].planfinished_time,
                        'finished_time': datas[i].finished_time,
                        'finished_percent': datas[i].finished_percent,
@@ -225,19 +238,18 @@ class Tasklist(Resource):
 #条件查询接口
 class QueryTasklist(Resource):
     def get(self):
-        # user_name = request.args.get('user_name')
-        # task_type = request.args.get('task_type')
-        # pdt_id = request.args.get('pdt_id')
-        # finished_time = request.args.get('finished_time')
+        args = parser_task.parse_args()
+        page = args['page']
+        per_page = args['per_page']
         filter = []
-        if ('user_name' in request.args) and (request.args['user_name']):
-            user_name = request.args['user_name']
+        if ('user_name' in args) and (args['user_name']):
+            user_name = args['user_name']
             filter.append(User.user_name== user_name)
-        if ('task_type' in request.args) and (request.args['task_type']):
-            task_type = request.args['task_type']
+        if ('task_type' in args) and (args['task_type']):
+            task_type = args['task_type']
             filter.append(Task.task_type == task_type)
-        if ('pdt_id' in request.args) and (request.args['pdt_id']):
-            pdt_id = request.args['pdt_id']
+        if ('pdt_id' in args) and (args['pdt_id']):
+            pdt_id = args['pdt_id']
             filter.append(Product.pdt_id == pdt_id)
         if ('startDate' in request.args) and (request.args['startDate']):
             startDate = request.args['startDate']
@@ -247,15 +259,27 @@ class QueryTasklist(Resource):
             endDate = request.args['endDate']
             # filter.append(db.cast(Task.finished_time, db.DATE) <= db.cast(endDate, db.Date))
             filter.append(Task.finished_time<= endDate)
-        datas = Task.query.filter(Task.user_id==User.user_id).filter(Task.pdt_id==Product.pdt_id).filter(Task.delete_flag==0).filter(*filter).all()
+        paginates = Task.query.order_by('task_id').filter(Task.user_id==User.user_id).filter(Task.pdt_id==Product.pdt_id).filter(Task.delete_flag==0).filter(*filter).paginate(page, per_page, error_out=False)
+        print(filter)
         # datas = Task.query.join(User,Task.user_id==User.user_id).filter(Task.delete_flag==0).filter(*filter).all()
+        datas = paginates.items
+        page = paginates.page
+        pages = paginates.pages
+        per_page = paginates.per_page
+        has_prev = paginates.has_prev
+        has_next = paginates.has_next
+        total = paginates.total
+        rwlx_value = Dictitem.query.filter(Dictitem.dict_code == 'rwlx').first().key_value
+        l_rwlx_value = ast.literal_eval(rwlx_value)
         als = []
-        # 把user_name字段加入到datas的返回数据中
+        # 把user_name等字段加入到datas的返回数据中
         for i in range(len(datas)):
             to_json = {'task_id': datas[i].task_id,
                        'content': datas[i].content,
                        'task_type': datas[i].task_type,
+                       'task_type_name': get_dict_name(l_rwlx_value, datas[i].task_type),
                        'pdt_id': datas[i].pdt_id,
+                       'product_name': Product.find_by_id(datas[i].pdt_id).product_name,
                        'planfinished_time': datas[i].planfinished_time,
                        'finished_time': datas[i].finished_time,
                        'finished_percent': datas[i].finished_percent,
@@ -269,9 +293,9 @@ class QueryTasklist(Resource):
             als.append(to_json)
         als = [marshal(al, resource_task_fields) for al in als]
         if als:
-            return return_true_json(als)
+            return return_page_true_json(als, page, pages, per_page, has_prev, has_next, total)
         else:
-            return return_false_json(als)
+            return return_page_false_json(als, page, pages, per_page, has_prev, has_next, total)
 
 class UserList(Resource):
     def post(self):

@@ -52,6 +52,9 @@ parser_task.add_argument('user_id', type=int)
 parser_task.add_argument('user_name', type=str)
 parser_task.add_argument('remark', type=str)
 parser_task.add_argument('delete_flag', type=int)
+parser_task.add_argument('startDate', type=str)
+parser_task.add_argument('endDate', type=str)
+
 
 parser_dictitem = reqparse.RequestParser()
 parser_dictitem.add_argument('id',type=int)
@@ -80,7 +83,9 @@ resource_task_fields = {
 	'task_id':fields.Integer,
 	'content':fields.String,
 	'task_type':fields.Integer,
+	'task_type_name':fields.String,
 	'pdt_id':fields.Integer,
+	'product_name':fields.String,
 	'planfinished_time':fields.String,
 	'finished_time':fields.String,
 	'finished_percent':fields.String,
