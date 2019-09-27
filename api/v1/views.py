@@ -8,8 +8,10 @@
 """接口实现"""
 import ast
 import datetime
+import os
 
-from flask import jsonify, request, json
+import openpyxl as openpyxl
+from flask import jsonify, request, json, Response
 from flask_restful import Resource, Api, marshal
 # from flask_restful import reqparse # 用于请求的参数解析
 # from sqlalchemy.orm import session
@@ -82,7 +84,7 @@ def str_to_datatime(time_str):
     return datetime.date(int(year), int(month), int(day))
 
 
-# 计算预期天数
+# 计算逾期天数
 def get_diviation(planfinished_time, finished_time):
     if finished_time:
         diviation = (str_to_datatime(finished_time) - str_to_datatime(planfinished_time)).days
@@ -90,9 +92,60 @@ def get_diviation(planfinished_time, finished_time):
     else:
         return None
 
+#根据日期计算当前属于当月第几周,周一作为一周的开始
+def get_week_of_month(time_str):
+    time_list = time_str[0:10].split("-")
+    year = int(time_list[0])
+    month = int(time_list[1])
+    day = int(time_list[2])
+    end = int(datetime.datetime(year, month, day).strftime("%W"))
+    begin = int(datetime.datetime(year, month, 1).strftime("%W"))
+    return end - begin + 1
+
+#根据传入的参数导出生产EXCEL文件
+def creation_excel_xlsx(path, sheet_name, value):
+        index = len(value)
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = sheet_name
+        for i in range(0, index):
+            for j in range(0, len(value[i])):
+                sheet.cell(row=i + 1, column=j + 1, value=str(value[i][j]))
+        workbook.save(path)
+        # print("xlsx格式表格写入数据成功！")
+
+#追加数据到excel文件中
+def write_excel_xlsx(path,sheet_name,value):
+    path = path
+    wb = openpyxl.load_workbook(path)
+    #切换到目标数据表
+    ws = wb[sheet_name]
+    #待填充数据
+    index = len(value)
+    for i in range(0,index):
+        ws.append(value[i])
+    savename = path
+    wb.save(savename)
+    # print("xlsx格式表格追加数据成功")
+
+
+#文件读取迭代器
+def file_iterator(file_path, chunk_size=512):
+    """
+    file_path:文件路径
+    chunk_size: 每次读取流大小
+    """
+    with open(file_path, 'rb') as target_file:
+        while True:
+            chunk = target_file.read(chunk_size)
+            # print(chunk)
+            if chunk:
+                yield chunk
+            else:
+                break
+
 
 """定义资源"""
-
 
 class Hello(Resource):
     def get(self):
@@ -128,20 +181,28 @@ class Tasklist(Resource):
     def post(self):
         args = parser_task.parse_args()
         task_type = args['task_type']
+        task_nature = args['task_nature']
         pdt_id = args['pdt_id']
         content = args['content']
         planfinished_time = args['planfinished_time']
         finished_percent = args['finished_percent']
+        #如果提交的任务进度是100，则自动更新当前时间为完成时间
+        if finished_percent == "100" :
+            finished_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            finished_time = None
         user_id = args['user_id']
         remark = args['remark']
         creat_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         # print(planfinished_time)
         # print(type(planfinished_time))
         task = Task(task_type=task_type,
+                    task_nature=task_nature,
                     pdt_id=pdt_id,
                     content=content,
                     planfinished_time=planfinished_time,
                     finished_percent=finished_percent,
+                    finished_time = finished_time,
                     create_time=creat_time,
                     user_id=user_id,
                     remark=remark)
@@ -155,19 +216,27 @@ class Tasklist(Resource):
         args = parser_task.parse_args()
         task_id = args['task_id']
         task_type = args['task_type']
+        task_nature = args['task_nature']
         pdt_id = args['pdt_id']
         content = args['content']
         planfinished_time = args['planfinished_time']
         finished_percent = args['finished_percent']
+        # 如果提交的任务进度是100，则自动更新当前时间为完成时间
+        if finished_percent == "100" :
+            finished_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            finished_time = None
         user_id = args['user_id']
         remark = args['remark']
 
         task = Task.query_task_id(task_id)
         task.task_type = task_type
+        task.task_nature = task_nature
         task.pdt_id = pdt_id
         task.content = content
         task.planfinished_time = planfinished_time
         task.finished_percent = finished_percent
+        task.finished_time = finished_time
         task.user_id = user_id
         task.remark = remark
         Task.commit(self)
@@ -203,6 +272,7 @@ class Tasklist(Resource):
             to_json = {'task_id': datas[i].task_id,
                        'content': datas[i].content,
                        'task_type': datas[i].task_type,
+                       'task_nature':datas[i].task_nature,
                        'task_type_name':get_dict_name(l_rwlx_value, datas[i].task_type),
                        'pdt_id': datas[i].pdt_id,
                        'product_name': Product.find_by_id(datas[i].pdt_id).product_name,
@@ -277,6 +347,7 @@ class QueryTasklist(Resource):
             to_json = {'task_id': datas[i].task_id,
                        'content': datas[i].content,
                        'task_type': datas[i].task_type,
+                       'task_nature': datas[i].task_nature,
                        'task_type_name': get_dict_name(l_rwlx_value, datas[i].task_type),
                        'pdt_id': datas[i].pdt_id,
                        'product_name': Product.find_by_id(datas[i].pdt_id).product_name,
@@ -517,8 +588,12 @@ class Dictitem_query(Resource):
         id = args['id']
         dict_code = args['dict_code']
         dict_name = args['dict_name']
-        # key_value = args['key_value']
-        key_value = json.dumps(args['key_value'], ensure_ascii=False)
+        key_value_old = args['key_value']
+        key_value = []
+        for i in range(len(key_value_old)):
+            value = ast.literal_eval(key_value_old[i])
+            key_value.append(value)
+        key_value = json.dumps(key_value, ensure_ascii=False)
 
         dictitem = Dictitem.find_by_id(id)
         dictitem.dict_code = dict_code
@@ -534,3 +609,92 @@ class Dictitem_query(Resource):
         dictitem = Dictitem.find_by_id(id)
         Dictitem.delete(dictitem)
         return return_true_json("删除成功")
+
+#导出周报写入到excel接口,根据数据自动判断本周完成和下周计划
+class Weeklyreport_output(Resource):
+    def post(self):
+        args = parser_weeklyreport_output.parse_args()
+        data = args["data"]
+        new_data = []
+        for i in range(len(data)):
+            value = ast.literal_eval(data[i])
+            new_data.append(value)
+        print(new_data)
+        path = "D:\\2019周报.xlsx"
+        data_finish = []
+        data_plan = []
+        for i in range(len(new_data)):
+            if new_data[i]['finished_time']:
+                list =[
+                    new_data[i]['create_time'][0:10].split("-")[1],
+                    new_data[i]['create_time'],
+                    new_data[i]['finished_time'],
+                    get_week_of_month(new_data[i]['create_time']),
+                    new_data[i]['task_type_name'],
+                    new_data[i]['content'],
+                    new_data[i]['product_name'],
+                    new_data[i]['user_name'],
+                    new_data[i]['task_nature'],
+                    100,
+                    new_data[i]['finished_percent'],
+                    new_data[i]['remark']
+                ]
+                data_finish.append(list)
+            else:
+                list = [
+                    new_data[i]['create_time'][0:10].split("-")[1],
+                    new_data[i]['create_time'],
+                    new_data[i]['planfinished_time'],
+                    get_week_of_month(new_data[i]['create_time']),
+                    new_data[i]['task_type_name'],
+                    new_data[i]['content'],
+                    new_data[i]['product_name'],
+                    new_data[i]['user_name'],
+                    new_data[i]['task_nature'],
+                    new_data[i]['remark']
+                ]
+                data_plan.append(list)
+        write_excel_xlsx(path, "本周完成", data_finish)
+        write_excel_xlsx(path, "下周计划", data_plan)
+        return return_true_json("xsxl表格追加数据成功")
+
+#导出周报写入到excel接口
+# class Weeklyreport_output(Resource):
+#     def get(self):
+#         args = parser_weeklyreport_output.parse_args()
+#         path = args["path"]
+#         sheet_name = args["sheet_name"]
+#         value = args["value"]
+#         value_new = []
+#         for i in range(len(value)):
+#             list = eval(value[i])
+#             value_new.append(list)
+#         print(value_new,type(value_new))
+#         # creation_excel_xlsx(path, sheet_name, value_new)
+#         # return return_true_json("xsxl表格生成成功")
+#         write_excel_xlsx(path, sheet_name, value_new)
+#         return return_true_json("xsxl表格追加数据成功")
+
+
+#下载周报接口
+class Weeklyreport_download(Resource):
+    def get(self):
+        args = parser_weeklyreport_download.parse_args()
+        path = args["path"]
+        if path is None:
+            return return_false_json("没有路径参数")
+        else:
+            if path == '':
+                return return_false_json("路径不能为空")
+            else:
+                if not os.path.isfile(path):
+                    return return_false_json("文件路径不存在")
+                else:
+                    filename = os.path.basename(path)
+                    print(filename)
+                    response = Response(file_iterator(path))
+                    print(response)
+                    response.headers['Content-Type'] = 'application/octet-stream'
+                    response.headers["Content-Disposition"] = 'attachment;filename="{}"'.format(filename)
+                    print(response.headers)
+                    return response

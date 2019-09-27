@@ -43,6 +43,7 @@ parser_task.add_argument('per_page',type=int)
 parser_task.add_argument('task_id', type=int)
 parser_task.add_argument('content', type=str)
 parser_task.add_argument('task_type', type=int)
+parser_task.add_argument('task_nature', type=int)
 parser_task.add_argument('pdt_id', type=int)
 parser_task.add_argument('planfinished_time', type=str)
 # parser_task.add_argument('finished_time', type=str, required=True)
@@ -62,6 +63,15 @@ parser_dictitem.add_argument('dict_code',type=str)
 parser_dictitem.add_argument('dict_name',type=str)
 parser_dictitem.add_argument('key_value',type=str,action='append')
 # parser_dictitem.add_argument('key_value',type=str)
+
+parser_weeklyreport_output = reqparse.RequestParser()
+# parser_weeklyreport_output.add_argument('path',type=str,required=True)
+# parser_weeklyreport_output.add_argument('sheet_name',type=str,required=True)
+parser_weeklyreport_output.add_argument('data',type=str,required=True,action='append')
+# parser_weeklyreport_output.add_argument('value',type=str,required=True,action='append')
+
+parser_weeklyreport_download = reqparse.RequestParser()
+parser_weeklyreport_download .add_argument('path',type=str,required=True)
 
 """序列化返回结果"""
 resource_role_fields = {
@@ -83,6 +93,7 @@ resource_task_fields = {
 	'task_id':fields.Integer,
 	'content':fields.String,
 	'task_type':fields.Integer,
+	'task_nature':fields.Integer,
 	'task_type_name':fields.String,
 	'pdt_id':fields.Integer,
 	'product_name':fields.String,

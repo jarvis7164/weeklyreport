@@ -18,6 +18,8 @@ api.add_resource(DepartmentList, '/api/v1/departments')
 api.add_resource(ProductList, '/api/v1/products')
 api.add_resource(DictitemList, '/api/v1/dictitem')
 api.add_resource(Dictitem_query, '/api/v1/dictitem/query')
+api.add_resource(Weeklyreport_output, '/api/v1/weeklyreport_output')
+api.add_resource(Weeklyreport_download, '/api/v1/weeklyreport_download')
 
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', port=5000,debug=True)

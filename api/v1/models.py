@@ -176,6 +176,7 @@ class Task(db.Model):
     task_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
     content = db.Column(db.String(1024))
     task_type = db.Column(db.SmallInteger, default=0)
+    task_nature = db.Column(db.SmallInteger, default=0)
     pdt_id = db.Column(db.Integer)
     # planfinished_time = db.Column(db.DateTime)
     planfinished_time = db.Column(db.String(20))
@@ -189,14 +190,15 @@ class Task(db.Model):
     deviation = db.Column(db.String(10))
     delete_flag = db.Column(db.SmallInteger, default=0)
 
-    def __init__(self, content, task_type, pdt_id, planfinished_time, finished_percent,
-                 create_time, user_id, remark):
+    def __init__(self, content, task_type,task_nature, pdt_id, planfinished_time, finished_percent,
+                 finished_time,create_time, user_id, remark):
 
         self.content = content
         self.task_type = task_type
+        self.task_nature = task_nature
         self.pdt_id = pdt_id
         self.planfinished_time = planfinished_time
-        # self.finished_time = finished_time
+        self.finished_time = finished_time
         self.finished_percent = finished_percent
         self.create_time = create_time
         self.user_id = user_id
@@ -215,7 +217,7 @@ class Task(db.Model):
     #分页查询
     @classmethod
     def find_all(cls, page, per_page):
-        return cls.query.order_by('task_id').filter(Task.delete_flag == 0).paginate(page, per_page, error_out=False)
+        return cls.query.order_by(Task.task_id.desc()).filter(Task.delete_flag == 0).paginate(page, per_page, error_out=False)
 
     def add_to_db(self):
         try:
