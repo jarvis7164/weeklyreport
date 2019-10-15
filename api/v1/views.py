@@ -8,6 +8,7 @@
 """接口实现"""
 import ast
 import datetime
+import hashlib
 import os
 
 import openpyxl as openpyxl
@@ -15,6 +16,7 @@ from flask import jsonify, request, json, Response
 from flask_restful import Resource, Api, marshal
 # from flask_restful import reqparse # 用于请求的参数解析
 # from sqlalchemy.orm import session
+from openpyxl.styles import Alignment, Font
 
 from api.v1.models import app, Role, User, Task, Department, Product,Dictitem
 from api.v1.serializers import *
@@ -66,14 +68,25 @@ def return_page_false_json(data,page,pages,per_page,has_prev,has_next,total):
     })
 
 
-#获取列表里面的字典的值方法
-def get_dict_name(list,key):
-    for i in list:
-        print(i,type(i),i["key"])
+# #获取列表里面的字典的值方法(已改成下面的优化方法)
+# def get_dict_name(list,key):
+#     for i in list:
+#         # print(i,type(i),i["key"])
+#         if i["key"] == key:
+#             return i["value"]
+#             break
+
+
+#获取相应字段数值的字典值
+def get_dict_name(dict_name,key):
+    dict_value = Dictitem.query.filter(Dictitem.dict_code == dict_name).first().key_value
+    # print(dict_value)
+    l_dict_value = ast.literal_eval(dict_value)
+    # print(l_dict_value)
+    for i in l_dict_value:
         if i["key"] == key:
             return i["value"]
             break
-
 
 # 日期格式转换，将string格式日期转换成datatime格式
 def str_to_datatime(time_str):
@@ -120,10 +133,18 @@ def write_excel_xlsx(path,sheet_name,value):
     wb = openpyxl.load_workbook(path)
     #切换到目标数据表
     ws = wb[sheet_name]
+    #设置单元格格式
+    font1 = Font(name=u'微软雅黑',size = 11,bold = False,italic = False,vertAlign = None,underline = 'none',strike = False,#设置字体颜色
+    color = 'FF000000')
+    aligmentCenter = Alignment(horizontal='center', vertical ='center',wrap_text = True,)#文字居中
     #待填充数据
     index = len(value)
     for i in range(0,index):
         ws.append(value[i])
+    for eachCommonRow in ws.iter_rows(min_row=3, max_col=ws.max_column, max_row=ws.max_row):
+        for eachCellInRow in eachCommonRow:
+            eachCellInRow.alignment = aligmentCenter
+            eachCellInRow.font = font1
     savename = path
     wb.save(savename)
     # print("xlsx格式表格追加数据成功")
@@ -144,6 +165,13 @@ def file_iterator(file_path, chunk_size=512):
             else:
                 break
 
+'''密码MD5加密方法'''
+def get_md5(password):
+    obj = hashlib.md5(password.encode('utf-8'))
+    obj.update
+    result = obj.hexdigest()
+    return result
+    # print(result)
 
 """定义资源"""
 
@@ -159,10 +187,11 @@ class Login(Resource):
         # res = [marshal(account, resource_user_fields)]
         print(type(account))
         password = args['password']
-        print(account)
-        print(password)
+        # print(get_md5(password))
+        # print(account)
+        # print(password)
         if args['account'] and password:
-            if account and password == account.password:
+            if account and get_md5(password) == account.password:
                 # return return_true_json("登录成功")
                 return jsonify({
                     "status": 1,
@@ -184,6 +213,8 @@ class Tasklist(Resource):
         task_nature = args['task_nature']
         pdt_id = args['pdt_id']
         content = args['content']
+        planstart_time = args['planstart_time']
+        start_time = args['start_time']
         planfinished_time = args['planfinished_time']
         finished_percent = args['finished_percent']
         #如果提交的任务进度是100，则自动更新当前时间为完成时间
@@ -191,26 +222,31 @@ class Tasklist(Resource):
             finished_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         else:
             finished_time = None
-        user_id = args['user_id']
         remark = args['remark']
         creat_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        # print(planfinished_time)
-        # print(type(planfinished_time))
-        task = Task(task_type=task_type,
-                    task_nature=task_nature,
-                    pdt_id=pdt_id,
-                    content=content,
-                    planfinished_time=planfinished_time,
-                    finished_percent=finished_percent,
-                    finished_time = finished_time,
-                    create_time=creat_time,
-                    user_id=user_id,
-                    remark=remark)
-        task.add_to_db()
-        if (task.task_id is None):
-            return return_false_json("任务插入失败")
+        user_id = args['user_id']
+        if user_id:     #判断user_id是否为空，为空不能插入
+            # print(planfinished_time)
+            # print(type(planfinished_time))
+            task = Task(task_type=task_type,
+                        task_nature=task_nature,
+                        pdt_id=pdt_id,
+                        content=content,
+                        planstart_time=planstart_time,
+                        start_time=start_time,
+                        planfinished_time=planfinished_time,
+                        finished_percent=finished_percent,
+                        finished_time = finished_time,
+                        create_time=creat_time,
+                        user_id=user_id,
+                        remark=remark)
+            task.add_to_db()
+            if (task.task_id is None):
+                return return_false_json("任务插入失败")
+            else:
+                return return_true_json("任务新增成功")
         else:
-            return return_true_json("任务新增成功")
+            return return_false_json("user_id不能为空")
 
     def put(self):
         args = parser_task.parse_args()
@@ -219,6 +255,8 @@ class Tasklist(Resource):
         task_nature = args['task_nature']
         pdt_id = args['pdt_id']
         content = args['content']
+        planstart_time = args['planstart_time']
+        start_time = args['start_time']
         planfinished_time = args['planfinished_time']
         finished_percent = args['finished_percent']
         # 如果提交的任务进度是100，则自动更新当前时间为完成时间
@@ -234,6 +272,8 @@ class Tasklist(Resource):
         task.task_nature = task_nature
         task.pdt_id = pdt_id
         task.content = content
+        task.planstart_time = planstart_time
+        task.start_time = start_time
         task.planfinished_time = planfinished_time
         task.finished_percent = finished_percent
         task.finished_time = finished_time
@@ -246,21 +286,32 @@ class Tasklist(Resource):
         args = parser_task.parse_args()
         page = args['page']
         per_page = args['per_page']
+        user_id = args['user_id']
+        planstart_time1 = args['planstart_time1']
+        planstart_time2 = args['planstart_time2']
         # datas = Task.find_all()
-        paginates = Task.find_all(page, per_page)
+        if user_id:   #根据user_id和planstart_time是否为空使用相应的方法返回数据
+            if planstart_time1:
+                paginates = Task.find_self_weekly(page, per_page,user_id,planstart_time1,planstart_time2)
+            else:
+                paginates = Task.find_self(page, per_page,user_id)
+        else:
+            paginates = Task.find_all(page, per_page)
         datas = paginates.items
-        page = paginates.page
-        pages = paginates.pages
-        per_page = paginates.per_page
+        page = paginates.page #返回第几页
+        pages = paginates.pages  #总页数
+        per_page = paginates.per_page #每页数量
         has_prev = paginates.has_prev
         has_next = paginates.has_next
-        total = paginates.total
-        rwlx_value = Dictitem.query.filter(Dictitem.dict_code == 'rwlx').first().key_value
+        total = paginates.total   #总记录数
+        # rwlx_value = Dictitem.query.filter(Dictitem.dict_code == 'rwlx').first().key_value
+        # rwxz_value = Dictitem.query.filter(Dictitem.dict_code == 'rwxz').first().key_value
         # print(datas)
         # print(type(datas))
         # print(rwlx_value, type(rwlx_value))
-        l_rwlx_value = ast.literal_eval(rwlx_value)
-        # print(l_rwlx_value,type(l_rwlx_value))
+        # l_rwlx_value = ast.literal_eval(rwlx_value)
+        # l_rwxz_value = ast.literal_eval(rwxz_value)
+        # print(l_rwxz_value,type(l_rwxz_value))
         # 合并字典（key值不能相同）
         # d_rwlx_value = {}
         # for i in l_rwlx_value:
@@ -273,7 +324,8 @@ class Tasklist(Resource):
                        'content': datas[i].content,
                        'task_type': datas[i].task_type,
                        'task_nature':datas[i].task_nature,
-                       'task_type_name':get_dict_name(l_rwlx_value, datas[i].task_type),
+                       'task_nature_name':get_dict_name("rwxz", datas[i].task_nature),
+                       'task_type_name':get_dict_name("rwlx", datas[i].task_type),
                        'pdt_id': datas[i].pdt_id,
                        'product_name': Product.find_by_id(datas[i].pdt_id).product_name,
                        'planfinished_time': datas[i].planfinished_time,
@@ -307,20 +359,40 @@ class Tasklist(Resource):
 
 #条件查询接口
 class QueryTasklist(Resource):
-    def get(self):
+    def post(self):
         args = parser_task.parse_args()
+        print(args)
         page = args['page']
         per_page = args['per_page']
+        # 创建一个filter的条件列表，将选择的条件加入列表中
         filter = []
-        if ('user_name' in args) and (args['user_name']):
+        #统计条件支持多选
+        if ('user_name' in args) and (args['user_name']!=None):#[None]的布尔值为true]
             user_name = args['user_name']
-            filter.append(User.user_name== user_name)
-        if ('task_type' in args) and (args['task_type']):
+            print(user_name)
+            filter.append(User.user_name.in_(user_name))
+        if ('task_type' in args) and (args['task_type']!=None):
             task_type = args['task_type']
-            filter.append(Task.task_type == task_type)
-        if ('pdt_id' in args) and (args['pdt_id']):
+            print(task_type)
+            filter.append(Task.task_type.in_(task_type))
+            # print(filter)
+        if ('pdt_id' in args) and (args['pdt_id']!=None):
             pdt_id = args['pdt_id']
-            filter.append(Product.pdt_id == pdt_id)
+            print(pdt_id)
+            filter.append(Product.pdt_id.in_(pdt_id))
+        # if ('user_name' in args) and (args['user_name']):#[None]的布尔值为true]
+        #     user_name = args['user_name']
+        #     # print(user_name)
+        #     filter.append(User.user_name==user_name)
+        # if ('task_type' in args) and (args['task_type']):
+        #     task_type = args['task_type']
+        #     # print(task_type)
+        #     filter.append(Task.task_type==task_type)
+        #     print(filter)
+        # if ('pdt_id' in args) and (args['pdt_id']):
+        #     pdt_id = args['pdt_id']
+        #     # print(pdt_id)
+        #     filter.append(Product.pdt_id==pdt_id)
         if ('startDate' in request.args) and (request.args['startDate']):
             startDate = request.args['startDate']
             # filter.append(db.cast(Task.finished_time, db.DATE) >= db.cast(startDate, db.Date))
@@ -339,8 +411,10 @@ class QueryTasklist(Resource):
         has_prev = paginates.has_prev
         has_next = paginates.has_next
         total = paginates.total
-        rwlx_value = Dictitem.query.filter(Dictitem.dict_code == 'rwlx').first().key_value
-        l_rwlx_value = ast.literal_eval(rwlx_value)
+        # rwlx_value = Dictitem.query.filter(Dictitem.dict_code == 'rwlx').first().key_value
+        # rwxz_value = Dictitem.query.filter(Dictitem.dict_code == 'rwxz').first().key_value
+        # l_rwlx_value = ast.literal_eval(rwlx_value)
+        # l_rwxz_value = ast.literal_eval(rwxz_value)
         als = []
         # 把user_name等字段加入到datas的返回数据中
         for i in range(len(datas)):
@@ -348,7 +422,8 @@ class QueryTasklist(Resource):
                        'content': datas[i].content,
                        'task_type': datas[i].task_type,
                        'task_nature': datas[i].task_nature,
-                       'task_type_name': get_dict_name(l_rwlx_value, datas[i].task_type),
+                       'task_nature_name': get_dict_name("rwxz", datas[i].task_nature),
+                       'task_type_name': get_dict_name("rwlx", datas[i].task_type),
                        'pdt_id': datas[i].pdt_id,
                        'product_name': Product.find_by_id(datas[i].pdt_id).product_name,
                        'planfinished_time': datas[i].planfinished_time,
@@ -357,7 +432,7 @@ class QueryTasklist(Resource):
                        'create_time': datas[i].create_time,
                        'user_id': datas[i].user_id,
                        'remark': datas[i].remark,
-                       'deviation': get_diviation(datas[i].planfinished_time, datas[i].finished_time),
+                       'deviation': get_diviation(datas[i].planfinished_time, datas[i].finished_time),  #计算延期天数
                        'delete_flag': datas[i].delete_flag,
                        'user_name': Task.query_user_name(datas[i].user_id).user_name
                        }
@@ -619,22 +694,25 @@ class Weeklyreport_output(Resource):
         for i in range(len(data)):
             value = ast.literal_eval(data[i])
             new_data.append(value)
-        print(new_data)
+        # print(new_data)
         path = "D:\\2019周报.xlsx"
         data_finish = []
         data_plan = []
+        # rwxz_value = Dictitem.query.filter(Dictitem.dict_code == 'rwxz').first().key_value #获取任务性质的字典值
+        # l_rwxz_value = ast.literal_eval(rwxz_value)
         for i in range(len(new_data)):
             if new_data[i]['finished_time']:
                 list =[
-                    new_data[i]['create_time'][0:10].split("-")[1],
-                    new_data[i]['create_time'],
-                    new_data[i]['finished_time'],
-                    get_week_of_month(new_data[i]['create_time']),
+                    str(new_data[i]['create_time'][0:10].split("-")[1])+"月",
+                    new_data[i]['create_time'][0:10],
+                    new_data[i]['finished_time'][0:10],
+                    "第"+str(get_week_of_month(new_data[i]['create_time']))+"周",
                     new_data[i]['task_type_name'],
                     new_data[i]['content'],
                     new_data[i]['product_name'],
                     new_data[i]['user_name'],
-                    new_data[i]['task_nature'],
+                    # new_data[i]['task_nature'],
+                    get_dict_name("rwxz", new_data[i]['task_nature']),
                     100,
                     new_data[i]['finished_percent'],
                     new_data[i]['remark']
@@ -642,15 +720,16 @@ class Weeklyreport_output(Resource):
                 data_finish.append(list)
             else:
                 list = [
-                    new_data[i]['create_time'][0:10].split("-")[1],
-                    new_data[i]['create_time'],
-                    new_data[i]['planfinished_time'],
-                    get_week_of_month(new_data[i]['create_time']),
+                    str(new_data[i]['create_time'][0:10].split("-")[1])+"月",
+                    new_data[i]['create_time'][0:10],
+                    new_data[i]['planfinished_time'][0:10],
+                    "第"+str(get_week_of_month(new_data[i]['create_time']))+"周",
                     new_data[i]['task_type_name'],
                     new_data[i]['content'],
                     new_data[i]['product_name'],
                     new_data[i]['user_name'],
-                    new_data[i]['task_nature'],
+                    # new_data[i]['task_nature'],
+                    get_dict_name("rwxz", new_data[i]['task_nature']),
                     new_data[i]['remark']
                 ]
                 data_plan.append(list)

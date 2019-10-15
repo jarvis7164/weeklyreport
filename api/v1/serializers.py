@@ -42,15 +42,19 @@ parser_task.add_argument('page',type=int)
 parser_task.add_argument('per_page',type=int)
 parser_task.add_argument('task_id', type=int)
 parser_task.add_argument('content', type=str)
-parser_task.add_argument('task_type', type=int)
+parser_task.add_argument('task_type', type=int,action='append')
 parser_task.add_argument('task_nature', type=int)
-parser_task.add_argument('pdt_id', type=int)
+parser_task.add_argument('pdt_id', type=int,action='append')
 parser_task.add_argument('planfinished_time', type=str)
+parser_task.add_argument('planstart_time', type=str)
+parser_task.add_argument('planstart_time1', type=str)
+parser_task.add_argument('planstart_time2', type=str)
+parser_task.add_argument('start_time', type=str)
 # parser_task.add_argument('finished_time', type=str, required=True)
 parser_task.add_argument('finished_percent', type=str)
 # parser_addtask.add_argument('create_time', type=str)
 parser_task.add_argument('user_id', type=int)
-parser_task.add_argument('user_name', type=str)
+parser_task.add_argument('user_name', type=str,action='append')
 parser_task.add_argument('remark', type=str)
 parser_task.add_argument('delete_flag', type=int)
 parser_task.add_argument('startDate', type=str)
@@ -94,9 +98,12 @@ resource_task_fields = {
 	'content':fields.String,
 	'task_type':fields.Integer,
 	'task_nature':fields.Integer,
+	'task_nature_name':fields.String,
 	'task_type_name':fields.String,
 	'pdt_id':fields.Integer,
 	'product_name':fields.String,
+	'planstart_time':fields.String,
+	'start_time':fields.String,
 	'planfinished_time':fields.String,
 	'finished_time':fields.String,
 	'finished_percent':fields.String,

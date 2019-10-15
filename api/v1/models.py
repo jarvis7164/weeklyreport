@@ -185,13 +185,15 @@ class Task(db.Model):
     finished_percent = db.Column(db.String(10))
     # create_time = db.Column(db.DateTime)
     create_time = db.Column(db.String(20))
+    planstart_time = db.Column(db.String(20))
+    start_time = db.Column(db.String(20))
     user_id = db.Column(db.Integer)
     remark = db.Column(db.String(1024))
     deviation = db.Column(db.String(10))
     delete_flag = db.Column(db.SmallInteger, default=0)
 
     def __init__(self, content, task_type,task_nature, pdt_id, planfinished_time, finished_percent,
-                 finished_time,create_time, user_id, remark):
+                 finished_time,create_time,planstart_time,start_time, user_id, remark):
 
         self.content = content
         self.task_type = task_type
@@ -201,6 +203,8 @@ class Task(db.Model):
         self.finished_time = finished_time
         self.finished_percent = finished_percent
         self.create_time = create_time
+        self.planstart_time = planstart_time
+        self.start_time = start_time
         self.user_id = user_id
         self.remark = remark
 
@@ -216,8 +220,18 @@ class Task(db.Model):
 
     #分页查询
     @classmethod
+    def find_self(cls, page, per_page,user_id):
+        return cls.query.order_by(Task.task_id.desc()).filter(Task.delete_flag == 0).filter(Task.user_id==user_id).paginate(page, per_page, error_out=False)
+
+    @classmethod
     def find_all(cls, page, per_page):
         return cls.query.order_by(Task.task_id.desc()).filter(Task.delete_flag == 0).paginate(page, per_page, error_out=False)
+
+    #增加userid以及默认查询时间段
+    @classmethod
+    def find_self_weekly(cls, page, per_page,user_id,planstart_time1,planstart_time2):
+        return cls.query.order_by(Task.task_id.desc()).filter(Task.delete_flag == 0).filter(Task.user_id==user_id).filter(Task.planstart_time>=planstart_time1).filter(Task.planstart_time<=planstart_time2).paginate(page, per_page, error_out=False)
+
 
     def add_to_db(self):
         try:
