@@ -393,16 +393,15 @@ class QueryTasklist(Resource):
         #     pdt_id = args['pdt_id']
         #     # print(pdt_id)
         #     filter.append(Product.pdt_id==pdt_id)
-        if ('startDate' in request.args) and (request.args['startDate']):
-            startDate = request.args['startDate']
+        if ('startDate' in args) and (args['startDate']):
+            startDate = args['startDate']
             # filter.append(db.cast(Task.finished_time, db.DATE) >= db.cast(startDate, db.Date))
-            filter.append(Task.finished_time>= startDate)
-        if ('endDate' in request.args) and (request.args['endDate']):
-            endDate = request.args['endDate']
+            filter.append(Task.planstart_time>= startDate)
+        if ('endDate' in args) and (args['endDate']):
+            endDate = args['endDate']
             # filter.append(db.cast(Task.finished_time, db.DATE) <= db.cast(endDate, db.Date))
-            filter.append(Task.finished_time<= endDate)
+            filter.append(Task.planstart_time<= endDate)
         paginates = Task.query.order_by('task_id').filter(Task.user_id==User.user_id).filter(Task.pdt_id==Product.pdt_id).filter(Task.delete_flag==0).filter(*filter).paginate(page, per_page, error_out=False)
-        print(filter)
         # datas = Task.query.join(User,Task.user_id==User.user_id).filter(Task.delete_flag==0).filter(*filter).all()
         datas = paginates.items
         page = paginates.page

@@ -1,11 +1,9 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Time    : 2019/8/23 9:52
 # @Author  : jarvis7164
 # @File    : urls.py
 # @Software: PyCharm
-# @license : Copyright(C), eWord Technology Co., Ltd.
-# @Contact : yeahcheung213@163.com
+# @Contact : 309194437@qq.com
 from api.v1.views import *
 
 api.add_resource(Hello, '/')
