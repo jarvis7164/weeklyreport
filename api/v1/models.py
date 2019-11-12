@@ -15,7 +15,7 @@ CORS(app, supports_credentials=True)  # 处理跨域问题
 app.config.from_pyfile('config.py')  # 加载数据库配置
 db = SQLAlchemy(app)
 
-
+#用户表
 class User(db.Model):
     # 对应的实际表名 wr_user
     __tablename__ = 'wr_user'
@@ -64,7 +64,7 @@ class User(db.Model):
     def commit(self):
         db.session.commit()
 
-
+#角色表
 class Role(db.Model):
     __tablename__ = 'wr_role'
     role_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
@@ -105,7 +105,7 @@ class Role(db.Model):
     def commit(self):
         db.session.commit()
 
-
+#部门表
 class Department(db.Model):
     __tablename__ = 'wr_department'
     dept_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
@@ -137,7 +137,7 @@ class Department(db.Model):
     def commit(self):
         db.session.commit()
 
-
+#产品表
 class Product(db.Model):
     __tablename__ = 'wr_product'
     pdt_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
@@ -169,7 +169,7 @@ class Product(db.Model):
     def commit(self):
         db.session.commit()
 
-
+#任务表
 class Task(db.Model):
     __tablename__ = 'wr_task'
     task_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
@@ -217,19 +217,19 @@ class Task(db.Model):
     # def find_all(cls):
     #     return cls.query.filter(Task.delete_flag == 0).all()
 
-    #分页查询
-    @classmethod
-    def find_self(cls, page, per_page,user_id):
-        return cls.query.order_by(Task.task_id.desc()).filter(Task.delete_flag == 0).filter(Task.user_id==user_id).paginate(page, per_page, error_out=False)
+    # #分页查询
+    # @classmethod
+    # def find_self(cls, page, per_page,user_id):
+    #     return cls.query.order_by(Task.task_id.desc()).filter(Task.delete_flag == 0).filter(Task.user_id==user_id).paginate(page, per_page, error_out=False)
 
     @classmethod
     def find_all(cls, page, per_page):
         return cls.query.order_by(Task.task_id.desc()).filter(Task.delete_flag == 0).paginate(page, per_page, error_out=False)
 
-    #增加userid以及默认查询时间段
-    @classmethod
-    def find_self_weekly(cls, page, per_page,user_id,planstart_time1,planstart_time2):
-        return cls.query.order_by(Task.task_id.desc()).filter(Task.delete_flag == 0).filter(Task.user_id==user_id).filter(Task.planstart_time>=planstart_time1).filter(Task.planstart_time<=planstart_time2).paginate(page, per_page, error_out=False)
+    # #增加userid以及默认查询时间段
+    # @classmethod
+    # def find_self_weekly(cls, page, per_page,user_id,planstart_time1,planstart_time2):
+    #     return cls.query.order_by(Task.task_id.desc()).filter(Task.delete_flag == 0).filter(Task.user_id==user_id).filter(Task.planstart_time>=planstart_time1).filter(Task.planstart_time<=planstart_time2).paginate(page, per_page, error_out=False)
 
 
     def add_to_db(self):
@@ -274,6 +274,35 @@ class Dictitem(db.Model):
         except:
             db.session.rollback()
             db.session.flush()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    def commit(self):
+        db.session.commit()
+
+#预设条件表
+class Precondition(db.Model):
+    __tablename__ = 'wr_precondition'
+    pre_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
+    user_id = db.Column(db.Integer)
+    pre_condition = db.Column(db.String(2048))
+
+    def __init__(self,user_id,pre_condition):
+        self.user_id = user_id
+        self.pre_condition = pre_condition
+
+    def add_to_db(self):
+        try:
+            db.session.add(self)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            db.session.flush()
+
+    def query_pre_id(self):
+        return Precondition.query.filter(Precondition.pre_id == self).first()
 
     def delete(self):
         db.session.delete(self)

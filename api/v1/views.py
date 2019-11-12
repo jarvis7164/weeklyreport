@@ -12,15 +12,15 @@ import hashlib
 import os
 
 import openpyxl as openpyxl
-from flask import jsonify, request, json, Response
+from flask import jsonify, request, json, Response, Flask
 from flask_restful import Resource, Api, marshal
 # from flask_restful import reqparse # 用于请求的参数解析
 # from sqlalchemy.orm import session
 from openpyxl.styles import Alignment, Font
 
-from api.v1.models import app, Role, User, Task, Department, Product,Dictitem
+from api.v1.models import app, Role, User, Task, Department, Product,Dictitem,Precondition
 from api.v1.serializers import *
-
+# app = Flask(__name__,template_folder=r'D:\Python\weeklyreport\api\v1\static')
 api = Api(app)
 
 """格式化返回结果"""
@@ -77,7 +77,7 @@ def return_page_false_json(data,page,pages,per_page,has_prev,has_next,total):
 #             break
 
 
-#获取相应字段数值的字典值
+#获取数据字典表相应字段数值的字典值
 def get_dict_name(dict_name,key):
     dict_value = Dictitem.query.filter(Dictitem.dict_code == dict_name).first().key_value
     # print(dict_value)
@@ -114,6 +114,17 @@ def get_week_of_month(time_str):
     end = int(datetime.datetime(year, month, day).strftime("%W"))
     begin = int(datetime.datetime(year, month, 1).strftime("%W"))
     return end - begin + 1
+
+
+#将append加入的数组转换成字符串格式
+def list_to_string(list):
+    new_list = []
+    for i in range(len(list)):
+        value = ast.literal_eval(list[i])
+        new_list.append(value)
+    new_list = json.dumps(new_list, ensure_ascii=False)
+    return new_list
+
 
 #根据传入的参数导出生产EXCEL文件
 def creation_excel_xlsx(path, sheet_name, value):
@@ -250,6 +261,7 @@ class Tasklist(Resource):
 
     def put(self):
         args = parser_task.parse_args()
+        print(args)
         task_id = args['task_id']
         task_type = args['task_type']
         task_nature = args['task_nature']
@@ -289,14 +301,25 @@ class Tasklist(Resource):
         user_id = args['user_id']
         planstart_time1 = args['planstart_time1']
         planstart_time2 = args['planstart_time2']
+        filter = []
+        if ('user_id' in args) and (args['user_id']!=None):#[None]的布尔值为true]
+            user_id = args['user_id']
+            filter.append(Task.user_id==user_id)
+        if ('planstart_time1' in args) and (args['planstart_time1']):
+            planstart_time1 = args['planstart_time1']
+            filter.append(Task.planstart_time>=planstart_time1)
+        if ('planstart_time2' in args) and (args['planstart_time2']):
+            planstart_time2 = args['planstart_time2']
+            filter.append(Task.planstart_time<=planstart_time2)
+        paginates = Task.query.order_by(Task.task_id.desc()).filter(Task.user_id==User.user_id).filter(Task.pdt_id == Product.pdt_id).filter(Task.delete_flag == 0).filter(*filter).paginate(page, per_page,error_out=False)
         # datas = Task.find_all()
-        if user_id:   #根据user_id和planstart_time是否为空使用相应的方法返回数据
-            if planstart_time1:
-                paginates = Task.find_self_weekly(page, per_page,user_id,planstart_time1,planstart_time2)
-            else:
-                paginates = Task.find_self(page, per_page,user_id)
-        else:
-            paginates = Task.find_all(page, per_page)
+        # if user_id:   #根据user_id和planstart_time是否为空使用相应的方法返回数据
+        #     if planstart_time1:
+        #         paginates = Task.find_self_weekly(page, per_page,user_id,planstart_time1,planstart_time2)
+        #     else:
+        #         paginates = Task.find_self(page, per_page,user_id)
+        # else:
+        #     paginates = Task.find_all(page, per_page)
         datas = paginates.items
         page = paginates.page #返回第几页
         pages = paginates.pages  #总页数
@@ -328,6 +351,7 @@ class Tasklist(Resource):
                        'task_type_name':get_dict_name("rwlx", datas[i].task_type),
                        'pdt_id': datas[i].pdt_id,
                        'product_name': Product.find_by_id(datas[i].pdt_id).product_name,
+                       'planstart_time':datas[i].planstart_time,
                        'planfinished_time': datas[i].planfinished_time,
                        'finished_time': datas[i].finished_time,
                        'finished_percent': datas[i].finished_percent,
@@ -401,7 +425,7 @@ class QueryTasklist(Resource):
             endDate = args['endDate']
             # filter.append(db.cast(Task.finished_time, db.DATE) <= db.cast(endDate, db.Date))
             filter.append(Task.planstart_time<= endDate)
-        paginates = Task.query.order_by('task_id').filter(Task.user_id==User.user_id).filter(Task.pdt_id==Product.pdt_id).filter(Task.delete_flag==0).filter(*filter).paginate(page, per_page, error_out=False)
+        paginates = Task.query.order_by(Task.task_id.desc()).filter(Task.user_id==User.user_id).filter(Task.pdt_id==Product.pdt_id).filter(Task.delete_flag==0).filter(*filter).paginate(page, per_page, error_out=False)
         # datas = Task.query.join(User,Task.user_id==User.user_id).filter(Task.delete_flag==0).filter(*filter).all()
         datas = paginates.items
         page = paginates.page
@@ -425,6 +449,7 @@ class QueryTasklist(Resource):
                        'task_type_name': get_dict_name("rwlx", datas[i].task_type),
                        'pdt_id': datas[i].pdt_id,
                        'product_name': Product.find_by_id(datas[i].pdt_id).product_name,
+                       'planstart_time': datas[i].planstart_time,
                        'planfinished_time': datas[i].planfinished_time,
                        'finished_time': datas[i].finished_time,
                        'finished_percent': datas[i].finished_percent,
@@ -453,6 +478,7 @@ class UserList(Resource):
         role_id = args['role_id']
         dept_id = args['dept_id']
         status = args['status']
+        # pre_condition = args['pre_condition']
         delete_flag = args['delete_flag']
 
         user = User(account=account,
@@ -463,8 +489,9 @@ class UserList(Resource):
                     role_id=role_id,
                     dept_id=dept_id,
                     status=status,
+                    # pre_condition=pre_condition,
                     delete_flag=delete_flag)
-        print(user.user_name)
+        # print(user.user_name)
         user.add_to_db()
         if (user.user_id is None):
             return return_false_json("插入失败")
@@ -483,15 +510,17 @@ class UserList(Resource):
         args = parser_user.parse_args()
         user_id = args['user_id']
         account = args['account']
-        # password = args['password']
+        password = args['password']
         user_name = args['user_name']
         role_id = args['role_id']
         dept_id = args['dept_id']
         status = args['status']
+        # pre_condition_old = args['pre_condition']
+        # pre_condition = list_to_string(pre_condition_old)
 
         user = User.query_user_id(user_id)
         user.account = account
-        # user.password = password
+        user.password = password
         user.user_name = user_name
         user.role_id = role_id
         user.dept_id = dept_id
@@ -508,6 +537,46 @@ class UserList(Resource):
         user.delete_flag = delete_flag
         User.commit(self)
         return return_true_json("用户删除成功")
+
+class Pre_condition(Resource):
+    #新增预设接口
+    def post(self):
+        args = parser_preconditon.parse_args()
+        user_id = args['user_id']
+        pre_condition = args['pre_condition']
+        # print(user_id)
+        # print(pre_condition)
+
+        precondition = Precondition(user_id = user_id,pre_condition=pre_condition)
+        precondition.add_to_db()
+        return return_true_json("新增预设成功")
+
+    #更新预设接口
+    def put(self):
+        args = parser_preconditon.parse_args()
+        pre_id = args['pre_id']
+        user_id = args['user_id']
+        pre_condition = args['pre_condition']
+        print(pre_id)
+        print(user_id)
+        print(pre_condition)
+
+        precondition = Precondition.query_pre_id(pre_id)
+        precondition.user_id= user_id
+        precondition.pre_condition=pre_condition
+        Precondition.commit(self)
+        return return_true_json("预设条件更新成功")
+
+    #查询预设接口
+    def get(self):
+        args = parser_preconditon.parse_args()
+        user_id = args['user_id']
+        datas = Precondition.query.filter(Precondition.user_id==user_id).all()
+        res = [marshal(data, resource_precondition_fields) for data in datas]
+        if datas:
+            return return_true_json(res)
+        else:
+            return return_false_json(res)
 
 
 class RoleList(Resource):
@@ -646,12 +715,13 @@ class Dictitem_query(Resource):
         # key_value = json.dumps(args['key_value'],ensure_ascii=False)
         #将key_value获取的数组数据转成dict再重新生成数组序列
         key_value_old = args['key_value']
-        key_value = []
-        for i in range(len(key_value_old)):
-            value = ast.literal_eval(key_value_old[i])
-            key_value.append(value)
-        key_value = json.dumps(key_value,ensure_ascii=False)
-        print(key_value,type(key_value))
+        # key_value = []
+        key_value = list_to_string(key_value_old)
+        # for i in range(len(key_value_old)):
+        #     value = ast.literal_eval(key_value_old[i])
+        #     key_value.append(value)
+        # key_value = json.dumps(key_value,ensure_ascii=False)
+        # print(key_value,type(key_value))
 
         dictitem = Dictitem(dict_code=dict_code,dict_name=dict_name,key_value=key_value)
         dictitem.add_to_db()
@@ -694,7 +764,8 @@ class Weeklyreport_output(Resource):
             value = ast.literal_eval(data[i])
             new_data.append(value)
         # print(new_data)
-        path = "D:\\2019周报.xlsx"
+        path = "2019weekreport.xlsx"   #相对路径
+        print(os.path.abspath('.'))  #打印出当前的绝对路径
         data_finish = []
         data_plan = []
         # rwxz_value = Dictitem.query.filter(Dictitem.dict_code == 'rwxz').first().key_value #获取任务性质的字典值
@@ -703,8 +774,8 @@ class Weeklyreport_output(Resource):
             if new_data[i]['finished_time']:
                 list =[
                     str(new_data[i]['create_time'][0:10].split("-")[1])+"月",
-                    new_data[i]['create_time'][0:10],
-                    new_data[i]['finished_time'][0:10],
+                    new_data[i]['create_time'][0:10].replace('-','/'),#将年-月-日的时间格式改成年/月/日
+                    new_data[i]['finished_time'][0:10].replace('-','/'),
                     "第"+str(get_week_of_month(new_data[i]['create_time']))+"周",
                     new_data[i]['task_type_name'],
                     new_data[i]['content'],
@@ -720,8 +791,8 @@ class Weeklyreport_output(Resource):
             else:
                 list = [
                     str(new_data[i]['create_time'][0:10].split("-")[1])+"月",
-                    new_data[i]['create_time'][0:10],
-                    new_data[i]['planfinished_time'][0:10],
+                    new_data[i]['create_time'][0:10].replace('-','/'),
+                    new_data[i]['planfinished_time'][0:10].replace('-','/'),
                     "第"+str(get_week_of_month(new_data[i]['create_time']))+"周",
                     new_data[i]['task_type_name'],
                     new_data[i]['content'],
@@ -736,7 +807,7 @@ class Weeklyreport_output(Resource):
         write_excel_xlsx(path, "下周计划", data_plan)
         return return_true_json("xsxl表格追加数据成功")
 
-#导出周报写入到excel接口
+# # 导出周报写入到excel接口
 # class Weeklyreport_output(Resource):
 #     def get(self):
 #         args = parser_weeklyreport_output.parse_args()

@@ -16,7 +16,10 @@ parser_user.add_argument('create_time', type=str)
 parser_user.add_argument('role_id', type=int)
 parser_user.add_argument('dept_id', type=int)
 parser_user.add_argument('status', type=bool)
+parser_user.add_argument('pre_condition', type=str,action='append')
 parser_user.add_argument('delete_flag', type=bool)
+parser_user.add_argument('pre_con_name', type=str)
+
 
 parser_login = reqparse.RequestParser()
 parser_login.add_argument('account',type=str,required=True)
@@ -42,7 +45,7 @@ parser_task.add_argument('per_page',type=int)
 parser_task.add_argument('task_id', type=int)
 parser_task.add_argument('content', type=str)
 parser_task.add_argument('task_type', type=int,action='append')
-parser_task.add_argument('task_nature', type=int)
+parser_task.add_argument('task_nature', type=int,default=1)
 parser_task.add_argument('pdt_id', type=int,action='append')
 parser_task.add_argument('planfinished_time', type=str)
 parser_task.add_argument('planstart_time', type=str)
@@ -75,6 +78,13 @@ parser_weeklyreport_output.add_argument('data',type=str,required=True,action='ap
 
 parser_weeklyreport_download = reqparse.RequestParser()
 parser_weeklyreport_download .add_argument('path',type=str,required=True)
+
+parser_preconditon = reqparse.RequestParser()
+parser_preconditon.add_argument('pre_id', type=int)
+parser_preconditon.add_argument('user_id', type=int)
+parser_preconditon.add_argument('pre_condition', type=str)
+
+
 
 """序列化返回结果"""
 resource_role_fields = {
@@ -117,14 +127,15 @@ resource_task_fields = {
 resource_user_fields = {
 	'user_id':fields.Integer,
 	'account':fields.String,
-	'password':fields.String,
+	# 'password':fields.String,
 	'user_name':fields.String,
 	'create_account':fields.String,
 	'create_time':fields.String,
 	'role_id':fields.Integer,
 	'dept_id':fields.Integer,
+	'pre_condition':fields.String,
 	'status':fields.Integer,
-	'delete_flag':fields.Integer
+	# 'delete_flag':fields.Integer
 }
 
 resource_dictitem_fields = {
@@ -132,4 +143,10 @@ resource_dictitem_fields = {
 	'dict_code':fields.String,
 	'dict_name':fields.String,
 	'key_value':fields.String,
+}
+
+resource_precondition_fields = {
+	'pre_id':fields.Integer,
+	'user_id':fields.Integer,
+	'pre_condition':fields.String,
 }
