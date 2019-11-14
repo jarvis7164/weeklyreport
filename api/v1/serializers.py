@@ -82,7 +82,10 @@ parser_weeklyreport_download .add_argument('path',type=str,required=True)
 parser_preconditon = reqparse.RequestParser()
 parser_preconditon.add_argument('pre_id', type=int)
 parser_preconditon.add_argument('user_id', type=int)
+parser_preconditon.add_argument('pre_name', type=str)
 parser_preconditon.add_argument('pre_condition', type=str)
+parser_preconditon.add_argument('page',type=int)
+parser_preconditon.add_argument('per_page',type=int)
 
 
 
@@ -148,5 +151,6 @@ resource_dictitem_fields = {
 resource_precondition_fields = {
 	'pre_id':fields.Integer,
 	'user_id':fields.Integer,
-	'pre_condition':fields.String,
+	'pre_name':fields.String,
+	# 'pre_condition':fields.String,
 }

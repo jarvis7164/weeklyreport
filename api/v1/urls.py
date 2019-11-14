@@ -21,6 +21,7 @@ api.add_resource(Dictitem_query, '/api/v1/dictitem/query')
 api.add_resource(Weeklyreport_output, '/api/v1/weeklyreport_output')
 api.add_resource(Weeklyreport_download, '/api/v1/weeklyreport_download')
 api.add_resource(Pre_condition, '/api/v1/precondition')
+api.add_resource(QueryPreconditon, '/api/v1/querypreconditon')
 
 
 @app.route('/')

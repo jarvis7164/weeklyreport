@@ -17,6 +17,7 @@ from flask_restful import Resource, Api, marshal
 # from flask_restful import reqparse # 用于请求的参数解析
 # from sqlalchemy.orm import session
 from openpyxl.styles import Alignment, Font
+from enum import Enum
 
 from api.v1.models import app, Role, User, Task, Department, Product,Dictitem,Precondition
 from api.v1.serializers import *
@@ -24,8 +25,6 @@ from api.v1.serializers import *
 api = Api(app)
 
 """格式化返回结果"""
-
-
 def return_true_json(data):
     return jsonify({
         "status": 1,
@@ -45,7 +44,6 @@ def return_page_true_json(data,page,pages,per_page,has_prev,has_next,total):
         "total":total,
         "msg": "request successfully"
     })
-
 
 def return_false_json(data):
     return jsonify({
@@ -96,7 +94,6 @@ def str_to_datatime(time_str):
     day = time_list[2]
     return datetime.date(int(year), int(month), int(day))
 
-
 # 计算逾期天数
 def get_diviation(planfinished_time, finished_time):
     if finished_time:
@@ -115,7 +112,6 @@ def get_week_of_month(time_str):
     begin = int(datetime.datetime(year, month, 1).strftime("%W"))
     return end - begin + 1
 
-
 #将append加入的数组转换成字符串格式
 def list_to_string(list):
     new_list = []
@@ -124,7 +120,6 @@ def list_to_string(list):
         new_list.append(value)
     new_list = json.dumps(new_list, ensure_ascii=False)
     return new_list
-
 
 #根据传入的参数导出生产EXCEL文件
 def creation_excel_xlsx(path, sheet_name, value):
@@ -160,7 +155,6 @@ def write_excel_xlsx(path,sheet_name,value):
     wb.save(savename)
     # print("xlsx格式表格追加数据成功")
 
-
 #文件读取迭代器
 def file_iterator(file_path, chunk_size=512):
     """
@@ -184,13 +178,28 @@ def get_md5(password):
     return result
     # print(result)
 
+
 """定义资源"""
+
+#返回时间的枚举类
+class ReturnTime(Enum):
+    today = datetime.date.today()
+    this_week_start = today - datetime.timedelta(days=today.weekday())  #本周开始时间
+    this_week_end = today + datetime.timedelta(days=6 - today.weekday())  #本周结束时间
+    this_month_start = datetime.datetime(today.year, today.month, 1)
+    this_month_end = datetime.datetime(today.year, today.month + 1, 1) - datetime.timedelta(days=1)
+    last_week_start = today - datetime.timedelta(days=today.weekday() + 7)
+    last_week_end = today - datetime.timedelta(days=today.weekday() + 1)
+    this_year_start = datetime.datetime(today.year, 1, 1)
+    this_year_end = datetime.datetime(today.year + 1, 1, 1) - datetime.timedelta(days=1)
+
+
 
 class Hello(Resource):
     def get(self):
         return 'Hello Flask-restful!'
 
-
+#登录接口
 class Login(Resource):
     def post(self):
         args = parser_login.parse_args()
@@ -381,6 +390,91 @@ class Tasklist(Resource):
         Task.commit(self)
         return return_true_json("删除成功")
 
+#根据预设条件查询接口
+class QueryPreconditon(Resource):
+    def get(self):
+        args = parser_preconditon.parse_args()
+        page = args['page']
+        per_page = args['per_page']
+        pre_id = args['pre_id']
+        pre_condition = Precondition.query_pre_id(pre_id)
+        # print(pre_condition,type(pre_condition))
+        values_dict = ast.literal_eval(pre_condition.pre_condition)  # 字符串转换成字典
+        # print(values_dict, type(values_dict))
+        # user_name = values_dict['user_name']
+        # task_type = values_dict['task_type']
+        # pdt_id = values_dict['pdt_id']
+        # startDate = values_dict['startDate']
+        user_name = values_dict.get('user_name',None)#获取字典user_name的值
+        task_type = values_dict.get('task_type', None)
+        pdt_id = values_dict.get('task_type',None)
+        startDate = values_dict.get('startDate','1979-01-01')
+        #判断时间是否是本周，本月，如果是，自动填入时间
+        if startDate == "本周":
+            startDate = ReturnTime.this_week_start.value
+            endDate = ReturnTime.this_week_end.value
+        elif startDate == "本月":
+            startDate = ReturnTime.this_month_start.value
+            endDate = ReturnTime.this_month_end.value
+        elif startDate == "上周":
+            startDate = ReturnTime.last_week_start.value
+            endDate = ReturnTime.last_week_end.value
+        elif startDate == "本年":
+            startDate = ReturnTime.this_year_start.value
+            endDate = ReturnTime.this_year_end.value
+        else:
+            startDate =  values_dict.get('startDate','1979-01-01')
+            endDate =  values_dict.get('endDate','2099-12-30')
+        print(startDate,endDate)
+        filter=[]
+        if (user_name!=None):#[None]的布尔值为true]
+            filter.append(User.user_name.in_(user_name))
+        if (task_type!=None):
+            filter.append(Task.task_type.in_(task_type))
+        if (pdt_id !=None):
+            filter.append(Product.pdt_id.in_(pdt_id))
+        if (startDate):
+            filter.append(Task.planstart_time>= startDate)
+        if (endDate):
+            filter.append(Task.planstart_time<= endDate)
+        paginates = Task.query.order_by(Task.task_id.desc()).filter(Task.user_id==User.user_id).filter(Task.pdt_id==Product.pdt_id).filter(Task.delete_flag==0).filter(*filter).paginate(page, per_page, error_out=False)
+        datas = paginates.items
+        page = paginates.page
+        pages = paginates.pages
+        per_page = paginates.per_page
+        has_prev = paginates.has_prev
+        has_next = paginates.has_next
+        total = paginates.total
+        als = []
+        # 把user_name等字段加入到datas的返回数据中
+        for i in range(len(datas)):
+            to_json = {'task_id': datas[i].task_id,
+                       'content': datas[i].content,
+                       'task_type': datas[i].task_type,
+                       'task_nature': datas[i].task_nature,
+                       'task_nature_name': get_dict_name("rwxz", datas[i].task_nature),
+                       'task_type_name': get_dict_name("rwlx", datas[i].task_type),
+                       'pdt_id': datas[i].pdt_id,
+                       'product_name': Product.find_by_id(datas[i].pdt_id).product_name,
+                       'planstart_time': datas[i].planstart_time,
+                       'planfinished_time': datas[i].planfinished_time,
+                       'finished_time': datas[i].finished_time,
+                       'finished_percent': datas[i].finished_percent,
+                       'create_time': datas[i].create_time,
+                       'user_id': datas[i].user_id,
+                       'remark': datas[i].remark,
+                       'deviation': get_diviation(datas[i].planfinished_time, datas[i].finished_time),  #计算延期天数
+                       'delete_flag': datas[i].delete_flag,
+                       'user_name': Task.query_user_name(datas[i].user_id).user_name
+                       }
+            als.append(to_json)
+        als = [marshal(al, resource_task_fields) for al in als]
+        if als:
+            return return_page_true_json(als, page, pages, per_page, has_prev, has_next, total)
+        else:
+            return return_page_false_json(als, page, pages, per_page, has_prev, has_next, total)
+
+
 #条件查询接口
 class QueryTasklist(Resource):
     def post(self):
@@ -543,11 +637,12 @@ class Pre_condition(Resource):
     def post(self):
         args = parser_preconditon.parse_args()
         user_id = args['user_id']
+        pre_name = args['pre_name']
         pre_condition = args['pre_condition']
         # print(user_id)
         # print(pre_condition)
 
-        precondition = Precondition(user_id = user_id,pre_condition=pre_condition)
+        precondition = Precondition(user_id = user_id,pre_name=pre_name, pre_condition=pre_condition)
         precondition.add_to_db()
         return return_true_json("新增预设成功")
 
@@ -556,6 +651,7 @@ class Pre_condition(Resource):
         args = parser_preconditon.parse_args()
         pre_id = args['pre_id']
         user_id = args['user_id']
+        pre_name = args['pre_name']
         pre_condition = args['pre_condition']
         print(pre_id)
         print(user_id)
@@ -563,6 +659,7 @@ class Pre_condition(Resource):
 
         precondition = Precondition.query_pre_id(pre_id)
         precondition.user_id= user_id
+        precondition.pre_name=pre_name
         precondition.pre_condition=pre_condition
         Precondition.commit(self)
         return return_true_json("预设条件更新成功")
@@ -577,6 +674,13 @@ class Pre_condition(Resource):
             return return_true_json(res)
         else:
             return return_false_json(res)
+
+    def delete(self):
+        args = parser_preconditon.parse_args()
+        pre_id = args['pre_id']
+        preconditon = Precondition.query_pre_id(pre_id)
+        Product.delete(preconditon)
+        return return_true_json("预设条件删除成功")
 
 
 class RoleList(Resource):

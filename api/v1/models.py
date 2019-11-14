@@ -287,10 +287,12 @@ class Precondition(db.Model):
     __tablename__ = 'wr_precondition'
     pre_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
     user_id = db.Column(db.Integer)
+    pre_name = db.Column(db.String(20))
     pre_condition = db.Column(db.String(2048))
 
-    def __init__(self,user_id,pre_condition):
+    def __init__(self,user_id,pre_name,pre_condition):
         self.user_id = user_id
+        self.pre_name = pre_name
         self.pre_condition = pre_condition
 
     def add_to_db(self):
