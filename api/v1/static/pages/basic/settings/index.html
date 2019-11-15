@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	 <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width" />
+    <title>系统设置</title>
+    <link rel="stylesheet" type="text/css" href="../../../assets/iview/iview-3.1.0/styles/iview.css" />
+    <script src="../../../assets/vue/vue-2.5.17.min.js"></script>
+	<script src="../../../assets/axios/axios.js"></script>
+	<script src="../../../js/config.js"></script>
+	<script src="../../../js/moment.js"></script>
+	
+    <script src="../../../assets/iview/iview-3.1.0/iview.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+		<div class="table" >
+
+        <!-- <div style="margin: 10px">
+            显示边框 <i-switch v-model="showBorder" style="margin-right: 5px"></i-switch>
+            显示条纹 <i-switch v-model="showStripe" style="margin-right: 5px"></i-switch>
+            显示索引 <i-switch v-model="showIndex" style="margin-right: 5px"></i-switch>
+            显示多选框 <i-switch v-model="showCheckbox" style="margin-right: 5px"></i-switch>
+            显示表头 <i-switch v-model="showHeader" style="margin-right: 5px"></i-switch>
+            显示滚动条 <i-switch v-model="fixedHeader" style="margin-right: 5px"></i-switch>
+            <br>
+            <br>
+            表格大小
+            <Radio-group v-model="tableSize" type="button">
+                <Radio label="large">大</Radio>
+                <Radio label="default">中(默认)</Radio>
+                <Radio label="small">小</Radio>
+            </Radio-group>
+        </div> -->
+        
+      
+
+             <i-Button type="primary" @click="addtask"  >新增任务</i-Button>
+			<!-- <i-Button type="primary" @click="add"  >新增任务</i-Button> -->
+			  <!-- 新增表单 -->
+               <modal
+                    v-model="modal1"
+                     title="新增任务"
+                     @on-ok="ok" 
+                    @on-cancel="cancel"
+					ref="modal"
+	
+					>
+					
+				
+		<i-Form :model="addform" :label-width="100" >
+          <Form-Item label="任务类型" >
+          <i-Select v-model="addform.task_type" size="large" style="width:350px"  >
+          <i-Option v-for="(item,index) in test1 ":key="item" :value="item.key">{{ item.value }}</i-Option> 
+              <!-- <i-Option v-for="(item,index) in addform ":key="index" :value="item.task_id">{{ item.task_id }}</i-Option> -->
+          </i-Select>
+      </Form-Item>
+	  
+	   <Form-Item label="相关项目" >
+	      <i-Select v-model="addform.pdt_id" size="large" style="width:350px">
+	     <i-Option v-for="(item,index) in test2 ":key="item" :value="item.pdt_id">{{ item.product_name }}</i-Option> 
+	      </i-Select>
+	  </Form-Item>
+	  
+	  <Form-Item label="任务内容">
+            <i-Input v-model="addform.content" placeholder="Enter something..."  type="textarea" :rows="5"
+			 style="width:350px"></i-Input>
+        </Form-Item>
+		
+		<Form-Item label="备注说明">
+		      <i-Input v-model="addform.remark" placeholder="Enter something..."  type="textarea" 
+					 style="width:350px"></i-Input>
+		  </Form-Item>
+	  
+	  <Form-Item label="计划开始时间">
+	       <!-- <Date-Picker type="daterange"   placeholder="Select date"   format="yyyy-MM-dd 23:59:59"   @on-change="[addform.planstart_time,addform.planfinished_time]=$event" :value="[addform.planstart_time,addform.planfinished_time]"   style="width:300px"></Date-Picker> -->
+	       <Date-Picker type="date"  
+			placeholder="Select date"  
+			 format="yyyy-MM-dd HH:mm:ss"  
+			 @on-change="planstart_time"
+			:value="addform.planstart_time"  
+			 style="width:300px"  
+		   :options="startOption"></Date-Picker>
+<!-- 	   <Row>
+				<i-Col span="10"> 计划开始时间:
+				<date-picker type="datetime" v-model="addform.planstart_time" placeholder="请选择开始时间"  @on-change="addform.planstart_time" style="width:70px"></date-picker>
+				</i-Col>
+				<i-Col span="10"> 计划结束时间:
+				<date-picker type="datetime" v-model="addform.planfinished_time" placeholder="请选择结束时间"  @on-change="addform.planstart_time" style="width:70px"></date-picker>
+				</i-Col>
+			</Row> -->
+		
+		</Form-Item>
+	  
+	  <Form-Item label="计划完成时间">
+            <!-- <Date-Picker type="daterange"   placeholder="Select date" :value="[addform.planstart_time,addform.planfinished_time]"  format="yyyy-MM-dd HH:mm:ss"  @on-change="addform.planfinished_time=$event" ></Date-Picker>   -->
+          <Date-Picker type="date"  
+		   placeholder="Select date"   
+		  format="yyyy-MM-dd 23:59:59" 
+		   @on-change="planfinished_time" 
+		  :value="addform.planfinished_time"   
+		  style="width:300px" 
+		   :options="endOption"></Date-Picker>
+
+		</Form-Item>
+		
+		<Form-Item label="任务进度">
+		    <Input-Number  v-model="addform.finished_percent"
+            :max="100"
+            v-model="value10"
+            :formatter="value => `${value}%`"
+            :parser="value => value.replace('%', '')"></Input-Number>
+    
+		  </Form-Item>
+	 
+	<!-- <Form-Item label="任务进度1">
+	 	   <Slider v-model="addform.finished_percent" :tip-format="format" style="width:300px"></Slider>
+	
+	 	  </Form-Item> -->
+		</i-form>
+		<!-- <div solt="footer" >
+		 <i-Button  type="primary" size="large" @click="ok">确定</i-Button>
+
+   
+		  </div> -->
+               </modal>
+			   
+		<!-- 修改表单	  --> 
+			    <modal
+			                   v-model="modal2"
+			                    title="修改任务"
+			                    @on-ok="update"
+			                   @on-cancel="cancel">
+			   			
+			   	<i-Form :model="updateform" :label-width="100" >
+			         <Form-Item label="任务类型" >
+			         <i-Select v-model="updateform.task_type" size="large" style="width:350px">
+			      <i-Option v-for="(item,index) in test1 ":key="item" :value="item.key">{{ item.value }}</i-Option>
+			             <!-- <i-Option v-for="(item,index) in addform ":key="index" :value="item.task_id">{{ item.task_id }}</i-Option> -->
+			         </i-Select>
+			     </Form-Item>
+			     
+			      <Form-Item label="相关项目" >
+			         <i-Select v-model="updateform.pdt_id" size="large" style="width:350px">
+			        <i-Option v-for="(item,index) in test2 ":key="item" :value="item.pdt_id">{{ item.product_name }}</i-Option> 
+			         </i-Select>
+			     </Form-Item>
+			     
+			     <Form-Item label="任务内容">
+			           <i-Input v-model="updateform.content" placeholder="Enter something..."  type="textarea" :rows="5"
+			   		 style="width:350px"></i-Input>
+			       </Form-Item>
+			   	
+			   	<Form-Item label="备注说明">
+			   	      <i-Input v-model="updateform.remark" placeholder="Enter something..."  type="textarea" 
+			   				 style="width:350px"></i-Input>
+			   	  </Form-Item>
+			     
+			     <Form-Item label="计划完成时间">
+			           <Date-Picker type="date"  placeholder="Select date" :value="updateform.planfinished_time"  @on-change="updateform.planfinished_time=$event" ></Date-Picker>   
+			       </Form-Item>
+			   	
+			   	<Form-Item label="任务进度">
+			   	    <Input-Number  v-model="updateform.finished_percent"
+			           :max="100"
+			           :min="0"
+			           :formatter="value => `${value}%`"
+			           :parser="value => value.replace('%', '')"></Input-Number>
+			   </ButtonGroup>
+			   	  </Form-Item>
+			   
+			   	</i-form>
+			              </modal>
+
+ <!-- <i-Button type="primary" @click="modal1 = true">Display dialog box</i-Button>
+    <Modal
+        v-model="modal1"
+        title="Common Modal dialog box title"
+        @on-ok="ok"
+        @on-cancel="cancel">
+        <p>Content of dialog</p>
+        <p>Content of dialog</p>
+        <p>Content of dialog</p>
+    </Modal> -->
+        <i-table :border="showBorder" :stripe="showStripe" :show-header="showHeader" :height="775" 
+            size="small" :data="tableData3" :columns="tableColumns3" width="1710">
+        
+
+            </i-table>
+			
+			
+					
+					<template solt="footer">
+						<Page :total="searchPages.total" :current="searchPages.current" :page-size="searchPages.size" show-total  show-elevator @on-change="initChangePage" align="right"/>
+						<!-- <search-form  :tableData3="tableData3" @searchInfo="search"  @changeStatus="changeStatus" @changeCurrent="changeCurrent"></search-form> -->
+						  <!-- <Page :total="100" show-total align="right"/> -->
+			        
+			</template>
+			 </div>
+    </div>
+    <script type="text/javascript">
+        var vm = new Vue({
+            el: "#app",
+            data: function () {
+                return {
+                    modal1:false,
+					modal2:false,
+					test1:[],
+					test2:[],
+					deviation:'',
+					delete_flag:'',
+					create_time: '',
+					task_type:'',
+					pdt_id:'',
+					 startOption: {},
+                     endOption: {},
+					
+				
+					addform:{
+						task_type:1,
+						pdt_id:1,
+						time:'',
+						planstart_time:'',
+						planfinished_time:'',	
+						finished_percent:'0',
+						remark:'',
+						content:'',
+						userid:''
+					},
+					
+					updateform:{
+						task_type:'',
+						pdt_id:'',
+						planfinished_time:'',
+						finished_percent:'0',
+						remark:'',
+						content:'',
+						
+					},
+					//分页
+					searchPages:{
+					　　　　　　　　size:20,
+					　　　　　　　　total:'',
+					　　　　　　　　current:1
+					　　　　　　},
+					//  listdata:[],
+                    tableData3: [ ],
+					
+                    showBorder: true,
+                    showStripe: true,
+                    showHeader: true,
+                    showIndex: true,
+                    showCheckbox: false,
+                    fixedHeader: false,
+                    tableSize: 'default'
+
+                }
+            },
+			
+
+			// watch:{
+			// 	updateform:function(){
+			// 		console.log("sssd:"+this.updateform.task_id)
+			// 	}
+			 // },
+    
+            computed: {
+                tableColumns3() {
+                    let columns = [];
+					
+                    if (this.showCheckbox) {
+                        columns.push({
+                            type: 'selection',
+                            width: 50,
+                            align: 'center'
+                        })
+                    }
+                    if (this.showIndex) {
+                        columns.push({
+                            type: 'index',
+							fixed: 'left',   
+                            width: 60,
+                            align: 'center'
+                        })
+                    }
+					 columns.push({
+					    title: '责任人',
+					    key: 'user_name',
+					    width: 100,
+					    align: 'center',
+						sortable: true,
+						 filter: {
+					     type: 'Input' //输入框过滤
+					       }
+					});  
+					// columns.push({
+					//     title: 'ID',
+					//     key: 'task_id',
+					//     width: 80,
+					//     align: 'center'
+					// });
+                    columns.push({
+                        title: '任务类型',
+                        key: 'task_type_name',
+                        sortable: true,
+                        width: 120,
+                        align: 'center',
+						  // render: (h, params) => {
+        //                 return  h('span',params.row.task_type === 1 ?'技术支持' : params.row.task_type === 2? '测试任务' : '文档编写')
+        //             }
+                    });
+                    columns.push({
+                        title: '相关项目',
+                        key: 'product_name',
+                        width: 120,
+						sortable: true,
+                        align: 'center',
+						//   render: (h, params) => {
+						// return  h('span',this.tableData3[params.index].pdt_id === 1 ?'imcis' : this.tableData3[params.index].pdt_id === 2? 'pod' : this.tableData3[params.index].pdt_id === 3? 'viewer' :'token')}
+
+                    });
+                    columns.push({
+                        title: '任务内容',
+                        key: 'content',
+						
+                        width: 500,
+                        align: 'center',
+					    tooltip:true,
+						//  render: (h, params) => {
+						// 	return  h('span',this.tableData3[params.index].content)}
+						// 
+												
+                    });
+                    columns.push({
+                        title: '进度',
+                        key: 'finished_percent',
+						sortable: true,
+                        width: 80,
+                        align: 'center',
+			render: (h, params) => {		
+			return h('span',params.row.finished_percent +'%')},
+			
+                    }); 
+						 
+						  columns.push({
+						     title: '计划开始时间',
+						     key: 'planstart_time',
+						 	sortable: true,
+						     width: 200,
+						     align: 'center',
+						 	
+						 });
+                    columns.push({
+                        title: '计划完成时间',
+                        key: 'planfinished_time',
+						sortable: true,
+                        width: 200,
+                        align: 'center',
+						
+                    });
+                    columns.push({
+                    
+                        title: '实际完成时间',
+                        key: 'finished_time',
+						sortable: true,
+                       width: 200,
+                        align: 'center'
+						
+                    });
+					columns.push({
+					    title: '创建时间',
+					    key: 'create_time',
+						sortable: true,
+					    width: 200,
+					    align: 'center'
+					});
+                    columns.push({
+                        title: '延期天数',
+                        key: 'deviation',
+						sortable: true,
+                        width: 110,
+                        align: 'center',
+						
+                    }); 
+                    columns.push({
+                        title: '备注',
+                        key: 'remark',
+                         width: 200,
+						  tooltip:true,
+                        align: 'center'
+                    });
+                    
+                    columns.push({
+                        title: '操作',
+                        key: 'action',
+                        align: 'center',
+						 fixed: 'right',
+						 width: 150,
+                        render: (h, params) => {
+                        return h('div', [
+                            h('Button', {
+                                props: {
+                                    type: 'primary',
+                                    size: 'small'
+                                },
+                                style: {
+                                    marginRight: '5px'
+                                },
+                                on: {
+                                    click: () => {
+                                        this.show(params.row)
+                                    }
+                                }
+                            }, '修改'),
+                            h('Button', {
+                                props: {
+                                    type: 'error',
+                                    size: 'small'
+                                },
+                                on: {
+                                    click: () => {
+                                        this.remove(params.index)
+                                    }
+                                }
+                            }, '删除')
+                        ])
+                    }
+                    });
+					
+      
+                    return columns;
+                }
+            },
+			watch:{
+				pdt_id:function(val,oldval)
+				{
+					 console.log("任务类型的值:"+val)
+				}
+				
+			},
+		
+			//获取task列表
+			created:function(){
+            this.showtask()
+			
+			},
+			methods:{
+				open1(){
+					
+				},
+		 //显示任务列表		
+	     showtask(){
+			 
+		  axios.get(''+host+'/api/v1/task',{
+					params:{
+						page:this.searchPages.current,
+		                per_page:20
+					}
+				}
+				)
+		          .then(res => {
+					  console.log("后台返回任务列表参数")
+		            console.log(res.data)
+					//console.log("12s3"+JSON.stringify(res.data))
+			       this.tableData3 =res.data.data 
+				   this.searchPages.total=res.data.total
+				  // console.log(res.data.data.length)
+				 //   console.log("前台显示任务列表")
+					// console.log(this.tableData3)
+		
+		//          前端分页，假分页   
+		            //var totalNum = 0;
+					// for(var i=0 ; i<res.data.data.length ;i++){
+					// 	var obj =eval(res.data.data[i]);
+					// 	//console.log(obj)
+					// 	obj.index=i+1;
+					// 	totalNum ++;
+					// 	//console.log(i)
+					// 	//console.log(res.data.data[i].deviation)
+					// 	if(res.data.data[i].deviation===null){
+					// 		res.data.data[i].deviation="未完成"
+					// 	}else{
+					// 		res.data.data[i].deviation=res.data.data[i].deviation+"天"
+					// 	}
+					// 	//console.log("this.formdata[i]="+i+JSON.stringify(this.formdata[i]))
+					// 	this.listdata.push(obj);
+					// 	if(i<20){
+					// 		
+					// 	this.tableData3.push(obj);
+					// 		
+					// 	}
+					// }
+					// this.searchPages.total=totalNum;
+		         
+					// for(var i=0;i<this.tableData3.length;i++){
+					// 	if(this.tableData3[i].task_type===1){
+					// 		this.tableData3[i].task_type='测试'
+					// 	}
+					// }
+		            //this.filters=this.tableData3.pdt_name
+					//console.log("tabledata3:"+JSON.stringify(this.tableData3))
+		          })
+		          .catch(function (error) {
+		            console.log(error)
+		          });
+	},			
+	
+	addtask(){
+		 this.showdictitem();
+		 this.modal1=true
+		//  this.addform.planstart_time = moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
+		// console.log(this.addform.planstart_time)
+		// this.addform.planfinished_time = moment().endOf('day').format('YYYY-MM-DD HH:mm:ss');
+		// console.log(this.addform.planfinished_time)
+	},
+	 //新增加载字典项(任务类型、相关项目)
+	 showdictitem(){
+		 //获取任务类型	
+		  axios.get(''+host+'/api/v1/dictitem')
+		   .then(res => {
+		      console.log("任务类型选项")
+		     console.log(res.data.data)
+			 // console.log("123"+JSON.stringify(res.data.data[0].key_value.length))
+			 // console.log("123"+JSON.stringify(res.data.data[0].key_value))
+		  //   console.log("1234"+JSON.stringify((JSON.parse(res.data.data[0].key_value)).length))
+		for(i=0;i<(JSON.parse(res.data.data[0].key_value)).length;i++){
+			var value;
+			value=(JSON.parse(res.data.data[0].key_value))[i];
+			this.test1.push(value)
+		}
+		//console.log("1234"+(this.test1))	
+		   })
+		   .catch(function (error) {
+		     console.log(error)
+		   });
+		    //获取相关项目
+		    axios.get(''+host+'/api/v1/products')
+		      .then(res => {
+				console.log("相关项目选项")
+		        console.log(res.data.data)
+				// console.log("111"+JSON.stringify(res.data.data.length))
+		    for(i=0;i<res.data.data.length;i++){
+		   	var value;
+		   	value=res.data.data[i];
+		   	this.test2.push(value)
+		   }
+		  // console.log("1234"+(this.test2))   	
+		      })
+		      .catch(function (error) {
+		        console.log(error)
+		      });   
+	 },
+	 
+	  
+   
+				
+				//弹窗点击确定,提交数据
+				ok () {
+					
+					var user_id= window.sessionStorage.getItem("user_id"); 
+					let obj = {
+						"task_type":this.addform.task_type,
+						"pdt_id":this.addform.pdt_id,
+						"content":this.addform.content,
+						"planstart_time":this.planstart_time,
+						"planfinished_time":this.planfinished_time,
+						"finished_percent":this.addform.finished_percent,
+						//"userid":1,
+						"remark":this.addform.remark,
+						"user_id":parseInt(user_id)
+					}
+					console.log("点击弹窗确定按钮"+JSON.stringify(obj))
+					axios({
+                      url: ''+host+'/api/v1/task',
+                      method: 'post',
+                      dataType: 'json',
+                      headers: {
+                          'Content-type': 'application/json;'
+                      },
+                      data: JSON.stringify(obj),
+                  }).then( (response)=>{
+					    console.log("新增任务内容")
+                    console.log(response)
+					 //提交成功重新弹窗  
+					 if(response.data.status===1){
+					  this.modal1=true;
+					  //弹窗内容重新清空
+					  this.addform={
+					                     task_type:1,
+					                     pdt_id:1,
+										 planstart_time:'',
+					                     planfinished_time:'',
+					                     finished_percent:'0',
+					                     remark:'',
+					                     content:'',
+					                     userid:''
+					                 };
+					this.$Message.info({content: '任务提交成功，自动新增下一条',
+                     duration: 3}, 
+					);
+					}
+					else{
+					this.$Message.info(response.data.msg);
+				    }
+				
+				})
+				},
+				cancel () {
+				    this.$Message.info('已取消');
+/* 					 this.modal1=true;
+					console.log("2:"+this.modal1) */
+					 location.reload()
+					
+				},
+				
+				//点击修改按钮
+				show (row) {
+                    this.modal2=true;
+					 this.showdictitem()
+					console.log("show:"+JSON.stringify(row))
+					this.updateform=row;
+					console.log(this.updateform)
+					console.log("show1:"+JSON.stringify(this.updateform))
+					
+            },
+			updateform(){
+			   
+			},
+			//修改更新数据
+			 update() {
+                  console.log("修改:"+JSON.stringify(this.updateform));
+				  
+                 axios({
+                      url: ''+host+'/api/v1/task',
+                      method: 'put',
+                      dataType: 'json',
+                      headers: {
+                          'Content-type': 'application/json;'
+                      },
+                      data: JSON.stringify(this.updateform),
+                  }).then(function (response){
+                      console.log(response)
+                      alert("返回:"+response.data.data)
+                      location.reload()
+
+                  })
+                      .catch(function(error){
+                          console.log(error)
+                      })
+
+              },
+			
+			//删除按钮
+            remove : function (index)  {
+				 console.log('date1' + this.tableData3[index].task_id)
+				 var obj1={
+					 "task_id": this.tableData3[index].task_id,
+				      "delete_flag":1}
+				 console.log('ta'+JSON.stringify(obj1))
+				
+                this.tableData3.splice(index, 1);
+				axios({
+                      url: ''+host+'/api/v1/task',
+                      method: 'delete',
+                      dataType: 'json',
+                      headers: {
+                          'Content-type': 'application/json;'
+                      },
+                      data: JSON.stringify(obj1),
+                  }).then(res => {
+                      if (res.status === 200) {
+                          this.$Message.info('删除成功');
+                          // 更新数据
+                          console.log(res)
+                          this.tableData3.splice(index, 1)
+						    location.reload()
+                      } else {
+                          alert(res.message)
+                      }
+                  }).catch(function () {
+                      alert('服务连接出错了')
+                  })
+            },
+			
+			//分页,点击上一页或者下一页,调用函数获取数据渲染页面
+			initChangePage:function(val){
+    	                    //识别当前页码
+							this.searchPages.current = val
+							console.log("当前页码"+val)
+							 this.showtask()
+									
+							
+							// 	
+			    //         	}　　　
+			　　　　　},
+// 		// 开始时间
+        planstart_time: function(e) {
+            this.planstart_time = e;
+            this.endOption = {
+                disabledDate: date =>{
+                    let planstart_time = this.planstart_time ? new Date(this.planstart_time).valueOf() : '';
+                    return date && (date.valueOf() < planstart_time);
+                }
+            }
+        },
+        // 结束时间
+
+			planfinished_time:function (e) {
+			
+				this.planfinished_time=e;
+				 let planfinished_time = this.planfinished_time ? new Date(this.planfinished_time).valueOf() - 1 * 24 * 60 * 60 * 1000 : '';
+					this.startOption= {
+						disabledDate(date) {
+							  return date && date.valueOf() > planfinished_time;
+						}
+					}
+				}
+
+ 
+
+				
+				
+			}
+			
+        });
+    </script>
+</body>
+
+</html>

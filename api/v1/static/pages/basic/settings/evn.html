@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<!-- <meta name="viewport" content="width=device-width" />-->
+    <title>任务统计</title>
+    <link rel="stylesheet" type="text/css" href="../../../assets/iview/iview-3.1.0/styles/iview.css" />
+    <script src="../../../assets/vue/vue-2.5.17.min.js"></script>
+	<script src="../../../assets/axios/axios.js"></script>
+	<script src="../../../js/config.js"></script>
+    <script src="../../../assets/iview/iview-3.1.0/iview.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="http://unpkg.com/view-design/dist/styles/iview.css">
+	<script type="text/javascript" src="http://vuejs.org/js/vue.min.js"></script>
+	<script type="text/javascript" src="http://unpkg.com/view-design/dist/iview.min.js"></script>
+</head>
+
+<body>
+	
+    <div id="app" >
+	
+<!-- <div id="input" style="margin: 20px"> -->
+	<i-Form ref="searchform" :model="formdata1" :label-width="10" inline style="margin: 10px" >
+				<Form-Item  prop="user_name" >	
+				  姓名：<i-Select v-model="formdata1.user_name"  :max-tag-count="1" multiple style="width:200px" clearable >
+					<i-Option v-for="(item,index) in test0 ":key="item" :value="item">{{ item }}</i-Option>
+				</i-Select>
+					</Form-Item>	
+					
+					<Form-Item  prop="task_type">				
+				任务类型： <i-Select v-model="formdata1.task_type"  :max-tag-count="1" multiple style="width:200px" clearable >
+					<i-Option v-for="(item,index) in test1 ":key="item" :value="item.key">{{ item.value }}</i-Option> 
+					 </i-Select>
+					</Form-Item>	
+					
+					<Form-Item prop="pdt_id">	
+				相关项目：  <i-Select v-model="formdata1.pdt_id" :max-tag-count="1" multiple style="width:200px" clearable>
+					  <i-Option v-for="(item,index) in test2 ":key="item" :value="item.pdt_id">{{ item.product_name }}</i-Option> 
+					  </i-Select>
+					  </Form-Item>	
+					  
+					<Form-Item prop="datetime">
+				完成日期： <Date-Picker type="daterange" :options="options2" placement="bottom-end" placeholder="Select date" style="width: 200px" :value="formdata1.datetime"  @on-change="formdata1.datetime=$event"  :start-date="new Date()"></Date-Picker>
+					</Form-Item>
+					
+					<Form-Item>
+					<i-Button type="primary" @click="search" >搜索</i-Button>
+					<i-Button type="primary" @click="upreport" ><Icon type="ios-cloud-upload-outline" ></Icon>上传周报</i-Button>
+					<i-Button type="primary" @click="downreport" ><Icon type="ios-cloud-download-outline" ></Icon> 下载周报</i-Button>
+					<i-Button type="primary" @click="exportData" align="right"><Icon type="md-archive" ></Icon> 导出数据</i-Button>
+					</Form-Item>
+					</i-Form>
+					
+					</template>
+			<!-- </div> -->
+	  <!-- <div id="table" style="margin: 20px"> -->
+		  <template>
+        <i-table  
+		:border="showBorder" :stripe="showStripe" :show-header="showHeader" :height="720" 
+            size="small" :data="formdata" :columns="tableColumns3" ref="table"   width="1698" style="margin: 10px" ></i-table>
+			
+			</template>
+			
+		
+		<template>
+			<Page :total="searchPages.total" :current="searchPages.current" :page-size="searchPages.size" show-total  show-elevator @on-change="initChangePage" align="right" />
+			<!-- <search-form  :formdata="formdata" @searchInfo="search"  @changeStatus="changeStatus" @changeCurrent="changeCurrent"></search-form> -->
+			  <!-- <Page :total="100" show-total align="right"/> -->
+        
+</template>
+			
+    <!-- </div> -->
+	 </div>
+	 
+	
+	
+   
+    <script type="text/javascript">
+        var vm = new Vue({
+            el: "#app",
+            data: function () {
+                return {
+                	test0:[],
+				test1:[],
+				test2:[],
+					//分页			
+			searchPages:{
+　　　　　　　　size:20,
+　　　　　　　　total:'',
+　　　　　　　　current:1
+　　　　　　},
+
+	    formdata: [],
+		
+		//搜索
+		formdata1: {
+			datetime:["1990-09-19","2019-21-13"]
+		},
+                    showBorder: true,
+                    showStripe: true,
+                    showHeader: true,
+                    showIndex: true,
+                    showCheckbox: false,
+                    fixedHeader: false,
+                    tableSize: 'default',
+					
+					//日期
+					 options2: {
+                    shortcuts: [
+                        {
+                            text: '本周',
+                            value () {
+                                const end = new Date();
+                                const start = new Date();
+                                start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+                                return [start, end];
+                            }
+                        },
+                        {
+                            text: '本月',
+                            value () {
+                                const end = new Date();
+                                const start = new Date();
+                                start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+                                return [start, end];
+                            }
+                        },
+                        {
+                            text: '本季',
+                            value () {
+                                const end = new Date();
+                                const start = new Date();
+                                start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+                                return [start, end];
+                            }
+                        }
+                    ]
+                }
+
+                }
+            },
+			
+			
+            computed: {
+                tableColumns3() {
+                    let columns = [];
+                    if (this.showCheckbox) {
+                        columns.push({
+                            type: 'selection',
+                            width: 60,
+                            align: 'center'
+                        })
+                    }
+                    if (this.showIndex) {
+                        columns.push({
+                            type: 'index',
+                            width: 60,
+							
+							fixed: 'left',
+                            align: 'center'
+                        })
+                    }
+					//  columns.push({
+					//     title: 'ID',
+					//     key: 'task_id',
+					//     width: 80,
+					//     align: 'center'
+					// });
+                    columns.push({
+                        title: '任务类型',
+                        key: 'task_type_name',
+                        sortable: true,
+                        width: 120,
+                        align: 'center',
+						// render: (h, params) => {
+						// return  h('span',params.row.task_type === 1 ?'技术支持' : params.row.task_type === 2? '测试任务' : '文档编写')}
+                    });
+                    columns.push({
+                        title: '相关项目',
+                        key: 'product_name',
+						sortable: true,
+                        width: 120,
+                        align: 'center',
+						// render: (h, params) => {
+						// 	return  h('span',params.row.pdt_id === 1 ?'imcis' :params.row.pdt_id === 2? 'pod' : params.row.pdt_id === 3? 'viewer' :'token')}
+						
+
+                    });
+                    columns.push({
+                        title: '任务内容',
+                        key: 'content',
+                        width: 500,
+						 tooltip:true,
+                        align: 'center'
+                    });
+                    columns.push({
+                        title: '进度',
+                        key: 'finished_percent',
+						sortable: true,
+                        width: 80,
+                        align: 'center',
+						render: (h, params) => {		
+						return h('span',params.row.finished_percent +'%')},
+                    });     
+					  columns.push({
+					     title: '创建时间',
+					     key: 'create_time',
+					 							 sortable: true,
+					     width: 200,
+					     align: 'center'
+					 });
+                    columns.push({
+                        title: '计划完成时间',
+                        key: 'planfinished_time',
+						sortable: true,
+                        width: 200,
+                        align: 'center'
+                    });
+                    columns.push({
+                    
+                        title: '实际完成时间',
+                        key: 'finished_time',
+						sortable: true,
+                        width: 200,
+                        align: 'center',
+                    });
+                    columns.push({
+                        title: '延期天数',
+                        key: 'deviation',
+						sortable: true,
+                        width: 110,
+                        align: 'center',
+						
+                    }); 
+                    columns.push({
+                        title: '备注',
+                        key: 'remark',
+                        width: 200,
+						 tooltip:true,
+                        align: 'center'
+                    });
+                       columns.push({
+                        title: '责任人',
+                        key: 'user_name',
+                        width: 100,
+                        align: 'center',
+						 filter: {
+                         type: 'Input' //输入框过滤
+                           }
+                    });      
+                    return columns;
+                }
+            },
+			
+			 watch:{
+			'formdata1.user_name':function(val,oldval){
+			             console.log("111:"+JSON.stringify(val))
+			          },
+			'formdata1.task_type':function(val,oldval){
+			             console.log("222:"+JSON.stringify(val))
+			          },	
+			'formdata1.pdt_id':function(val,oldval){
+							        console.log("333:"+JSON.stringify(val))
+							          },
+			 'formdata1':function(val,oldval){
+									           console.log("555:"+JSON.stringify(val))
+									            },
+			 'formdata1.datetime':function(val,oldval){
+					               console.log("666:"+JSON.stringify(val))
+					            }
+			          },
+					  
+	
+			//获取task列表
+			created:function(){
+				 this.showtask()
+			},
+			methods:{
+			
+				//导出数据
+					 exportData () {
+                    this.$refs.table.exportCsv({
+                        filename: '测试任务数据'
+                    });		    
+            }   , 
+			         //查询
+			　　　　　search(){
+					 console.log('cs:'+this.formdata1.user_name)
+					let params={
+						         user_name:this.formdata1.user_name,
+								 task_type:this.formdata1.task_type,
+								 pdt_id:this.formdata1.pdt_id,
+								 startDate: this.formdata1.datetime[0],
+								 endDate:this.formdata1.datetime[1],
+								 page:this.searchPages.current,
+								 per_page:20
+
+					 }
+					 console.log("2："+JSON.stringify(params))
+/*				 axios.get(''+host+'/api/v1/query',{
+					 params:{
+					user_name:this.formdata1.user_name,
+					task_type:this.formdata1.task_type,
+					pdt_id:this.formdata1.pdt_id,
+					 startDate: this.formdata1.datetime[0],
+					 endDate:this.formdata1.datetime[1],
+					 page:this.searchPages.current,
+					 per_page:20
+					 
+					 }
+				 }
+				 )*/
+					 axios({
+						 url: ''+host+'/api/v1/query',
+						 method: 'post',
+						 dataType: 'json',
+						 headers: {
+							 'Content-type': 'application/json;'
+						 },
+						 data: JSON.stringify(params),
+						 //params:params
+					 })
+				  .then(res => {
+					  console.log(res)
+					  this.formdata=res.data.data
+				    this.searchPages.total=res.data.total
+				  })
+				  .catch(function (error) {
+				    console.log(error)
+				  });　　　　
+			　　　  }　,
+			// add(){console.log("123")},
+			 
+			 	 //显示任务列表		
+			      showtask(){
+			 	  axios.get(''+host+'/api/v1/task',{
+			 				params:{
+			 					page:this.searchPages.current,
+			 	                per_page:20
+			 				}
+			 			}
+			 			)
+			 	          .then(res => {
+			 	            //console.log(res)
+			 				//console.log("12s3"+JSON.stringify(res.data))
+			 		       this.formdata =res.data.data ;
+			 			   this.searchPages.total=res.data.total;
+						   console.log("列表显示数据");
+			 				console.log(this.formdata)
+			 	          })
+			 	          .catch(function (error) {
+			 	            console.log(error)
+			 	          });
+						  this.showdictitem()
+			 },	
+			
+			//点击上/下一页分页
+			initChangePage:function(val){
+			this.searchPages.current = val
+			console.log("当前页码"+val)
+			 this.showtask()
+            	}　,
+				 showdictitem(){
+					 //获取姓名
+					 axios.get(''+host+'/api/v1/users')
+							 .then(res => {
+
+								  console.log('获取姓名:'+JSON.stringify(res.data.data))
+								 // console.log("123"+JSON.stringify(res.data.data[0].key_value.length))
+								 // console.log("123"+JSON.stringify(res.data.data[0].key_value))
+								 //   console.log("1234"+JSON.stringify((JSON.parse(res.data.data[0].key_value)).length))
+								 for(i=0;i<res.data.data.length;i++){
+									 var value;
+									 value=res.data.data[i].user_name;
+									 this.test0.push(value)
+								 }
+								 console.log("任务类型搜索条件");
+								 console.log(this.test0)
+							 })
+							 .catch(function (error) {
+								 console.log(error)
+							 });
+						 //获取任务类型	
+						  axios.get(''+host+'/api/v1/dictitem')
+						   .then(res => {
+						
+						    // console.log(res)
+							 // console.log("123"+JSON.stringify(res.data.data[0].key_value.length))
+							 // console.log("123"+JSON.stringify(res.data.data[0].key_value))
+						  //   console.log("1234"+JSON.stringify((JSON.parse(res.data.data[0].key_value)).length))
+						for(i=0;i<(JSON.parse(res.data.data[0].key_value)).length;i++){
+							var value;
+							value=(JSON.parse(res.data.data[0].key_value))[i];
+							this.test1.push(value)
+						}console.log("任务类型搜索条件");	
+						console.log(this.test1)	
+						   })
+						   .catch(function (error) {
+						     console.log(error)
+						   });
+						    //获取相关项目
+						    axios.get(''+host+'/api/v1/products')
+						      .then(res => {
+						       // console.log(res)
+								// console.log("111"+JSON.stringify(res.data.data.length))
+						    for(i=0;i<res.data.data.length;i++){
+						   	var value;
+						   	value=res.data.data[i];
+						   	this.test2.push(value)
+						   }
+						   console.log("相关项目搜索条件")  
+						   console.log(this.test2)   	
+						      })
+						      .catch(function (error) {
+						        console.log(error)
+						      });
+
+				},
+				
+				//上传周报
+				upreport(){
+					console.log("列表")
+					console.log(JSON.stringify(this.formdata))
+					let obj ={
+						"data":this.formdata
+					}	
+									console.log("obj")
+					console.log(JSON.stringify(obj))
+					
+					  axios({
+					      url: ''+host+'/api/v1/weeklyreport_output',
+					      method: 'post',
+					      dataType: 'json',
+					      headers: {
+					          'Content-type': 'application/json;'
+					      },
+					      data: JSON.stringify(obj),
+					  })
+					   .then(res => {
+					
+					     console.log(res)
+						 this.$Message.info({content: '成功上传至周报',
+						  duration: 3},
+						  
+						  
+						 );
+					
+					      })
+					      .catch(function (error) {
+					        console.log(error)
+					      });   
+					
+				},
+				downreport(){}
+				
+				　　
+　　　　　}
+  
+　　
+        
+			
+			
+			
+        });
+    </script>
+</body>
+
+</html>

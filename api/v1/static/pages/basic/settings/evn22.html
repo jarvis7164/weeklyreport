@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width" />
+    <title>数据字典</title>
+    <link rel="stylesheet" type="text/css" href="../../../assets/iview/iview-3.1.0/styles/iview.css" />
+    <script src="../../../assets/vue/vue-2.5.17.min.js"></script>
+    <script src="../../../assets/axios/axios.js"></script>
+    <script src="../../../js/config.js"></script>
+    <script src="../../../assets/iview/iview-3.1.0/iview.min.js"></script>
+</head>
+
+<body>
+<div id="app">
+    <div class="table" >
+        <i-Button type="primary" @click="modal1 = true"  >新增字典</i-Button>
+        <modal
+                v-model="modal1"
+                title="新增字典"
+                @on-ok="ok"
+                @on-cancel="cancel"
+                ref="modal">
+
+
+            <i-Form :model="addform" :label-width="100" >
+
+                <Form-Item label="字典代码">
+                    <i-Input v-model="addform.dict_code" placeholder="Enter something..." style="width: 300px" />
+                </Form-Item>
+                <Form-Item label="字典名称">
+                    <i-Input v-model="addform.dict_name" placeholder="Enter something..." style="width: 300px" />
+                </Form-Item>
+
+
+                <Form-Item
+                        :model="addform.key_value"
+                        v-for="(item, index) in key_value.items"
+                        v-if="item.status"
+                        :key="index"
+                        :label="'字典项' + item.index"
+
+                >
+                    <Row>
+                        <i-Col span="18">
+                            <i-Input type="text" v-model="item.value" placeholder="添加字典项" style="width: 143px" ></i-Input>
+                            <i-Input type="text" v-model="item.desc" placeholder="添加备注" style="width: 143px" ></i-Input>
+                        </i-Col>
+                        <i-Col span="4" offset="1">
+                            <i-Button @click="handleRemove(index)">Delete</i-Button>
+                        </i-Col>
+                    </Row>
+                </Form-Item>
+                <Form-Item>
+                    <Row>
+                        <i-Col span="10">
+                            <i-Button type="dashed"  @click="handleAdd" icon="md-add">添加字典项</i-Button>
+                        </i-Col>
+                    </Row>
+                </Form-Item>
+
+
+
+
+                <!-- <Form-Item label="任务进度1">
+                        <Slider v-model="addform.finished_percent" :tip-format="format" style="width:300px"></Slider>
+
+                       </Form-Item> -->
+            </i-Form>
+            <!-- <div solt="footer" >
+             <i-Button  type="primary" size="large" @click="ok">确定</i-Button>
+
+
+              </div> -->
+        </modal>
+
+        <!-- 修改表单	  -->
+        <modal
+                v-model="modal2"
+                title="修改任务"
+                @on-ok="update"
+                @on-cancel="cancel">
+
+            <i-Form :model="updateform" :label-width="100" >
+                <Form-Item label="字典代码">
+                    <i-Input v-model="updateform.dict_code" placeholder="Enter something..." style="width: 300px" disabled/>
+                </Form-Item>
+                <Form-Item label="字典名称">
+                    <i-Input v-model="updateform.dict_name" placeholder="Enter something..." style="width: 300px" disabled/>
+                </Form-Item>
+
+
+                <Form-Item
+                        :model="updateform.key_value"
+                        v-for="(item, index) in key_value.items"
+                        v-if="item.status"
+                        :key="index"
+                        :label="'字典项' + item.index"
+
+                >
+                    <Row>
+                        <i-Col span="18">
+                            <i-Input type="text" v-model="item.value" placeholder="Enter something..." style="width: 300px" ></i-Input>
+                        </i-Col>
+                        <i-Col span="4" offset="1">
+                            <i-Button @click="handleRemove(index)">Delete</i-Button>
+                        </i-Col>
+                    </Row>
+                </Form-Item>
+                <Form-Item>
+                    <Row>
+                        <i-Col span="10">
+                            <i-Button type="dashed"  @click="handleAdd" icon="md-add">添加字典项</i-Button>
+                        </i-Col>
+                    </Row>
+                </Form-Item>
+
+            </i-Form>
+        </modal>
+
+
+        <i-table :border="showBorder" :stripe="showStripe" :show-header="showHeader" :height="775"
+                 size="small" :data="tableData3" :columns="tableColumns3" width="1710">
+
+
+        </i-table>
+
+
+
+        <template solt="footer">
+            <Page :total="searchPages.total" :current="searchPages.current" :page-size="searchPages.size" show-total  show-elevator @on-change="initChangePage" align="right"/>
+            <!-- <search-form  :tableData3="tableData3" @searchInfo="search"  @changeStatus="changeStatus" @changeCurrent="changeCurrent"></search-form> -->
+            <!-- <Page :total="100" show-total align="right"/> -->
+
+        </template>
+    </div>
+</div>
+<script type="text/javascript">
+    var vm = new Vue({
+        el: "#app",
+        data: function () {
+            return {
+                modal1:false,
+                modal2:false,
+                //字典项
+                index: 1,
+                key_value: {
+                    items: [
+                        {
+                            value: '',
+                            desc: '',
+                            index: 1,
+                            status: 1
+                        }
+                    ]
+                },
+
+
+                addform:{
+                    dict_code:'',
+                    dict_name:'',
+                    key_value:[],
+                },
+
+                updateform:{
+                    key_value: {
+                        items: [
+                            {
+                                value: '',
+                                index: 1,
+                                status: 1
+                            }
+                        ]
+                    },
+                    dict_code:'',
+                    dict_name:'',
+
+                },
+                searchPages:{
+                    size:20,
+                    total:'40',
+                    current:1
+                },
+                listdata:[],
+                tableData3: [],
+                dictitem:[],
+                dictitem1:[],
+                showBorder: true,
+                showStripe: true,
+                showHeader: true,
+                showIndex: true,
+                showCheckbox: false,
+                fixedHeader: false,
+                tableSize: 'default'
+
+            }
+        },
+        // watch:{
+        // 	updateform:function(){
+        // 		console.log("sssd:"+this.updateform.task_id)
+        // 	}
+        // },
+        //  watch:{
+        // modal1:function(val,oldval){
+        //              console.log("222:"+val)
+        //           }
+        //           },
+        computed: {
+            tableColumns3() {
+                let columns = [];
+
+                if (this.showCheckbox) {
+                    columns.push({
+                        type: 'selection',
+                        width: 50,
+                        align: 'center'
+                    })
+                }
+                if (this.showIndex) {
+                    columns.push({
+                        type: 'index',
+                        fixed: 'left',
+                        width: 60,
+                        align: 'center'
+                    })
+                }
+
+                columns.push({
+                    title: '字典代码',
+                    key: 'dict_code',
+
+                    width: 300,
+                    align: 'center',
+                    tooltip:true,
+                    //  render: (h, params) => {
+                    // 	return  h('span',this.tableData3[params.index].content)}
+                    //
+
+                });
+                columns.push({
+                    title: '字典名称',
+                    key: 'dict_name',
+                    sortable: true,
+                    width: 300,
+                    align: 'center',
+                    // render: (h, params) => {
+                    //                 return  h('span',params.row.task_type === 1 ?'技术支持' : params.row.task_type === 2? '测试任务' : '文档编写')
+                    //             }
+                });
+/*                const array = text.split(",");
+
+                let result = null;
+                for (let i=0; i< array.length; i++) {
+                    if (i ==0 ){
+                        result = array[i];
+                    } else {
+                        result = <span>{result}{ br }{array[i]}</span>
+                    }
+                }*/
+                columns.push({
+                    title: '字典相关',
+                    align: 'center',
+                    children: [
+                        {
+                            title: '字典项',
+                            key: 'dictitem',
+                            align: 'center',
+                            width:150,
+                            sortable: true,
+/*                            render: (h,params) => {
+                                return h('div',params.map(v =>{
+                                    return h('Input',{
+                                        props:{
+                                            value:v.key+v.value,
+                                        },
+
+                                    }
+                                            )
+                                }))
+
+                            } */
+                        },
+                        {
+                            title: '备注',
+                            key: 'dictitem1',
+                            align: 'center',
+                            width: 250,
+                         /*   render: (h,params) => {
+/!*                                this.dictitem.for
+                                for(var i=0;i<this.dictitem.length;i++){
+                                   result='<span>{result}<br><br>{this.dictitem[i].value}</span>'
+                                }
+                                return '<div>{result}</div>'*!/
+                        return h('div',this.dictitem1.map(v =>{
+                            return h('div',{
+                                domProps:{
+                                    innerHTML:v.value
+                                }
+                            })
+                        }))
+
+                            }*/
+/*                            render: (h,params) => {
+                                return h('div',params.map(v =>{
+                                    return h('Input',{
+                                            props:{
+                                                value:v.value,
+                                            },
+                                        }
+                                    )
+                                }))
+
+                            } */
+
+                        }]
+
+
+                });
+
+
+
+                columns.push({
+                    title: '操作',
+                    key: 'action',
+                    align: 'center',
+                    fixed: 'right',
+                    // width: ,
+                    render: (h, params) => {
+                        return h('div', [
+                            h('Button', {
+                                props: {
+                                    type: 'primary',
+                                    size: 'small'
+                                },
+                                style: {
+                                    marginRight: '5px'
+                                },
+                                on: {
+                                    click: () => {
+                                        this.show(params.row)
+                                    }
+                                }
+                            }, '修改'),
+                            // h('Button', {
+                            //     props: {
+                            //         type: 'error',
+                            //         size: 'small'
+                            //     },
+                            //     on: {
+                            //         click: () => {
+                            //             this.remove(params.index)
+                            //         }
+                            //     }
+                            // }, '删除')
+                        ])
+                    }
+                });
+
+
+                return columns;
+            }
+        },
+
+
+
+        //获取task列表
+        created:function(){
+            axios.get(''+host+'/api/v1/dictitem')
+                .then(res => {
+                    console.log(res)
+                    this.tableData3=res.data.data;
+                    console.log("dictitem1"+res.data.data.length)
+                    console.log("dictitem1"+JSON.parse(res.data.data[0].key_value).length)
+                    for( i=0;i<res.data.data.length;i++){
+                        for( j=0;j<JSON.parse(res.data.data[i].key_value).length;j++){
+                            var value=JSON.parse(res.data.data[i].key_value)[j].value;
+                            var value1=JSON.parse(res.data.data[i].key_value)[j].desc;
+                            this.dictitem.push(value);
+                            this.dictitem1.push(value1)
+                            //console.log("dictitem"+JSON.stringify(this.dictitem))
+                            //console.log("dictitem1"+JSON.stringify(this.dictitem1))
+                        }
+                        //res.data.data[i].key_value=this.dictitem
+                    }
+                    console.log("dictitem"+JSON.stringify(this.dictitem))
+                    console.log("dictitem1"+JSON.stringify(this.dictitem1))
+                    //	res.data.data[i].key_value=this.dictitem
+                    //res.data.data[i].key_value1=this.dictitem1
+                })
+                .catch(function (error) {
+                    console.log(error)
+                });
+        },
+
+
+        methods:{
+            //增加字典项
+            handleAdd () {
+                this.index++;
+                this.key_value.items.push({
+                    value: '',
+                    index: this.index,
+                    status: 1
+                });},
+            //删除字典项
+            handleRemove (index) {
+                this.key_value.items[index].status = 0;
+            },
+
+            //处理字典项
+            showdictitem(){
+                axios.get(''+host+'/api/v1/dictitem')
+                    .then(res => {
+                        console.log(res)
+                        this.tableData3=res.data.data;
+                        for(i=0;i<(JSON.parse(res.data.data[0].key_value)).length;i++){
+                            var value;
+                            value=(JSON.parse(res.data.data[0].key_value))[i];
+                            this.test1.push(value)}
+                    })
+                    .catch(function (error) {
+                        console.log(error)
+                    });
+            },
+
+
+            //弹窗点击确定
+            ok () {
+                //新增字典
+                //循环字典项,拼成数组
+                var obj1
+                for(i=0;i<this.key_value.items.length;i++){
+                    obj1={
+                        "key":this.key_value.items[i].index,
+                        "value":this.key_value.items[i].value
+                    }
+                    this.addform.key_value.push(obj1)
+                    // [this.key_value.items[i].index] = this.key_value.items[i].value;
+                };
+                console.log("点击确定1"+JSON.stringify(obj1));
+                console.log("点击确定2"+JSON.stringify(this.addform.key_value));
+
+                let obj = {
+                    "dict_code":this.addform.dict_code,
+                    "dict_name":this.addform.dict_name,
+                    "key_value":this.addform.key_value
+                }
+                console.log("obj"+JSON.stringify(obj))
+                axios({
+                    url: ''+host+'/api/v1/dictitem/query',
+                    method: 'post',
+                    dataType: 'json',
+                    headers: {
+                        'Content-type': 'application/json;'
+                    },
+                    data: JSON.stringify(obj),
+                }).then( (response)=>{
+                    console.log(response)
+                    this.$Message.info({content: '新增成功',
+                            duration: 3} ,
+                        //  location.reload()
+                    );
+                })},
+            cancel () {
+                this.$Message.info('已取消');
+                /* 					 this.modal1=true;
+                                    console.log("2:"+this.modal1) */
+                location.reload()
+
+            },
+
+            //点击修改按钮
+            show (row) {
+                this.modal2=true;
+
+                console.log("show:"+JSON.stringify(row))
+                this.updateform=row;
+                console.log(this.updateform.key_value)
+                console.log("show1:"+JSON.stringify(this.updateform.key_value))
+
+                // let obj1 = {};
+                // 			 for(i=0;i<this.updateform.key_value.items.length;i++){
+                // 			obj1[this.updateform.key_value.items[i].index] = this.updateform.key_value.items[i].value;
+                // 			};
+                // 			console.log("点击确定1"+JSON.stringify(obj1));
+            },
+
+            //修改更新
+            update() {
+                console.log("修改:"+JSON.stringify(this.updateform));
+
+                axios({
+                    url: ''+host+'/api/v1/dictitem/query',
+                    method: 'put',
+                    dataType: 'json',
+                    headers: {
+                        'Content-type': 'application/json;'
+                    },
+                    data: JSON.stringify(this.updateform),
+                }).then(function (response){
+                    console.log(response)
+                    alert("返回:"+response.data.data)
+                    location.reload()
+
+                })
+                    .catch(function(error){
+                        console.log(error)
+                    })
+
+            },
+
+            //删除字典
+            remove : function (index)  {
+                console.log('date1' + this.tableData3[index].id)
+                var obj1={
+                    "id": this.tableData3[index].id,
+                }
+                console.log('ta'+JSON.stringify(obj1))
+
+                this.tableData3.splice(index, 1);
+                axios({
+                    url: ''+host+'/api/v1/dictitem/query',
+                    method: 'delete',
+                    dataType: 'json',
+                    headers: {
+                        'Content-type': 'application/json;'
+                    },
+                    data: JSON.stringify(obj1),
+                }).then(res => {
+                    if (res.status === 200) {
+                        alert('success')
+                        // 更新数据
+                        console.log(res)
+                        this.tableData3.splice(index, 1)
+                    } else {
+                        alert(res.message)
+                    }
+                }).catch(function () {
+                    alert('服务连接出错了')
+                })
+            },
+
+            //分页
+
+            initChangePage:function(val){
+                // i<=(x>10?10:x)
+
+                //this.searchPages.current = val
+                console.log("当前页码"+val)
+                this.tableData3.splice(0,this.tableData3.length);
+                //console.log("当前显示的数据"+this.tableData3)
+
+                for(var i = 20*(val - 1) + 1;
+                    i<= ((this.searchPages.total>20*val)?(20*val):(this.searchPages.total));
+                    i++){
+                    //console.log(" i = " + i + "，item：" + JSON.stringify(this.listdata[i]));
+                    this.tableData3.push(this.listdata[i-1]);
+                    //this.formdate=this.listdata[i-1];
+
+                }
+            },
+
+
+        }
+
+    });
+</script>
+</body>
+
+</html>

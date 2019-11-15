@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	 <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width" />
+    <title>数据字典</title>
+    <link rel="stylesheet" type="text/css" href="../../../assets/iview/iview-3.1.0/styles/iview.css" />
+    <script src="../../../assets/vue/vue-2.5.17.min.js"></script>
+	<script src="../../../assets/axios/axios.js"></script>
+	<script src="../../../js/config.js"></script>
+    <script src="../../../assets/iview/iview-3.1.0/iview.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+		<div class="table" >
+             <i-Button type="primary" @click="modal1 = true"  >新增字典</i-Button>
+	               <modal
+                    v-model="modal1"
+                     title="新增字典"
+                     @on-ok="ok" 
+                    @on-cancel="cancel"
+					ref="modal">
+					
+				
+		<i-Form :model="addform" :label-width="100" style="width: 550px" inline:true>
+       
+	  <Form-Item label="字典代码">
+            <i-Input v-model="addform.dict_code" placeholder="Enter something..." style="width: 330px" />
+        </Form-Item>
+			  <Form-Item label="字典名称">
+		      <i-Input v-model="addform.dict_name" placeholder="Enter something..." style="width: 330px" />
+		  </Form-Item>
+		  	  
+			
+			 <Form-Item
+			    :model="addform.key_value"
+                v-for="(item, index) in key_value.items"
+                v-if="item.status"
+                :key="index"
+                :label="'字典项' + item.index"  
+				
+				>
+            <Row>
+                <i-Col span="18">
+                    <i-Input type="text" v-model="item.value" placeholder="添加字典项" style="width: 130px" ></i-Input>
+					<i-Input type="text" v-model="item.desc" placeholder="添加备注" style="width: 200px" ></i-Input>
+                </i-Col>
+                <i-Col span="4" offset="1">
+                   <Icon type="ios-close-circle"   @click="handleRemove(index)"></Icon>
+                </i-Col>
+            </Row>
+        </Form-Item>
+        <Form-Item>
+            <Row>
+                <i-Col span="10">
+                    <i-Button type="dashed"  @click="handleAdd" icon="md-add">添加字典项</i-Button>
+                </i-Col>
+            </Row>
+        </Form-Item>
+        
+		
+		
+	 
+	<!-- <Form-Item label="任务进度1">
+	 	   <Slider v-model="addform.finished_percent" :tip-format="format" style="width:300px"></Slider>
+	
+	 	  </Form-Item> -->
+		</i-Form>
+		<!-- <div solt="footer" >
+		 <i-Button  type="primary" size="large" @click="ok">确定</i-Button>
+
+   
+		  </div> -->
+               </modal>
+			   
+		<!-- 修改表单	  --> 
+			    <modal
+			                   v-model="modal2"
+			                    title="修改任务"
+			                    @on-ok="update"
+			                   @on-cancel="cancel"
+							   >
+			   			
+			   	<i-Form :model="updateform" :label-width="100"  style="width: 550px" inline:true>
+			         <Form-Item label="字典代码">
+			             <i-Input v-model="updateform.dict_code" placeholder="Enter something..." style="width: 330px" disabled/>
+			         </Form-Item>
+			       			  <Form-Item label="字典名称">
+			       		      <i-Input v-model="updateform.dict_name" placeholder="Enter something..." style="width: 330px" disabled/>
+			       		  </Form-Item>
+			       		  	  
+			       			
+			       			 <Form-Item
+			       			  :model="addform.key_value"
+			       			 v-for="(item, index) in key_value.items"
+			       			 v-if="item.status"
+			       			 :key="index"
+			       			 :label="'字典项' + item.index"  
+			       				
+			       				>
+			             <Row>
+			                 <i-Col span="18">
+			                     <i-Input type="text" v-model="item.value" placeholder="添加字典项" style="width: 130px" ></i-Input>
+					             <i-Input type="text" v-model="item.desc" placeholder="添加备注" style="width: 200px" ></i-Input>					                 
+														 </i-Col>
+			                 <i-Col span="4" offset="1">
+			                    <Icon type="ios-close-circle" @click="handleRemove(index)" ></Icon>
+			                 </i-Col>
+			             </Row>
+			         </Form-Item>
+			         <Form-Item>
+			             <Row>
+			                 <i-Col span="10">
+			                     <i-Button type="dashed"  @click="handleAdd1" icon="md-add" >添加字典项</i-Button>
+			                 </i-Col>
+			             </Row>
+			         </Form-Item>  
+			   
+			   	</i-Form>
+			              </modal>
+
+
+        <i-table :border="showBorder" :stripe="showStripe" :show-header="showHeader" :height="775" 
+            size="small" :data="tableData3" :columns="tableColumns3" width="1710">
+        
+
+            </i-table>
+			
+			
+					
+					<!-- <template solt="footer">
+						<Page :total="searchPages.total" :current="searchPages.current" :page-size="searchPages.size" show-total  show-elevator @on-change="initChangePage" align="right"/> -->
+						<!-- <search-form  :tableData3="tableData3" @searchInfo="search"  @changeStatus="changeStatus" @changeCurrent="changeCurrent"></search-form> -->
+						  <!-- <Page :total="100" show-total align="right"/> -->
+			        
+			<!-- </template> -->
+			 </div>
+    </div>
+    <script type="text/javascript">
+        var vm = new Vue({
+            el: "#app",
+            data: function () {
+                return {
+                    modal1:false,
+					modal2:false,
+					//字典项
+					 index: 1,
+					key_value: {
+                    items: [
+                        {
+                            value: '',
+							desc: '',
+                            index:1 ,
+                            status:"" 
+                        }
+                    ]
+                },
+					
+
+					addform:{
+						dict_code:'',
+						dict_name:'',
+						key_value:[],
+					},
+					
+					updateform:{
+						dict_code:'',
+						dict_name:'',
+						key_value:[],
+						
+					},
+      
+					   
+					
+						
+						
+					
+					searchPages:{
+					　　　　　　　　size:20,
+					　　　　　　　　total:'40',
+					　　　　　　　　current:1
+					　　　　　　},
+					  listdata:[],
+                    tableData3: [],
+					dictitem:[],
+					dictitem1:[],
+                    showBorder: true,
+                    showStripe: true,
+                    showHeader: true,
+                    showIndex: true,
+                    showCheckbox: false,
+                    fixedHeader: false,
+                    tableSize: 'default'
+
+                }
+            },
+			// watch:{
+			// 	updateform:function(){
+			// 		console.log("sssd:"+this.updateform.task_id)
+			// 	}
+			// },
+      //  watch:{
+      // modal1:function(val,oldval){
+      //              console.log("222:"+val)
+      //           }
+      //           },
+            computed: {
+                tableColumns3() {
+                    let columns = [];
+					
+                    if (this.showCheckbox) {
+                        columns.push({
+                            type: 'selection',
+                            width: 50,
+                            align: 'center'
+                        })
+                    }
+                    if (this.showIndex) {
+                        columns.push({
+                            type: 'index',
+							fixed: 'left',   
+                            width: 60,
+                            align: 'center'
+                        })
+                    }
+			
+					  columns.push({
+					    title: '字典代码',
+					    key: 'dict_code',
+						
+					    width: 300,
+					    align: 'center',
+					    tooltip:true,
+						//  render: (h, params) => {
+						// 	return  h('span',this.tableData3[params.index].content)}
+						// 
+												
+					});
+                    columns.push({
+                        title: '字典名称',
+                        key: 'dict_name',
+                        sortable: true,
+                        width: 300,
+                        align: 'center',
+						  // render: (h, params) => {
+        //                 return  h('span',params.row.task_type === 1 ?'技术支持' : params.row.task_type === 2? '测试任务' : '文档编写')
+        //             }
+                    });
+                    columns.push({
+                        title: '字典相关',
+                       
+                        
+						
+                        align: 'center',
+						 children: [
+                            {
+                                title: '字典项',
+                                key: 'value',
+                                align: 'center',
+                                width: 450,
+                                sortable: true,
+								
+                            },
+							 {
+							    title: '备注',
+							    key: 'desc',
+							    align: 'center',
+							    width: 450,
+								// render: (h, params) => {
+								// 	return h('div',)
+								// }
+							  
+							}]
+						  
+
+                    });
+                  
+                   
+                    
+                    columns.push({
+                        title: '操作',
+                        key: 'action',
+                        align: 'center',
+						 fixed: 'right',
+						 // width: ,
+                        render: (h, params) => {
+                        return h('div', [
+                            h('Button', {
+                                props: {
+                                    type: 'primary',
+                                    size: 'small'
+                                },
+                                style: {
+                                    marginRight: '5px'
+                                },
+                                on: {
+                                    click: () => {
+                                        this.show(params.row)
+                                    }
+                                }
+                            }, '修改'),
+                            // h('Button', {
+                            //     props: {
+                            //         type: 'error',
+                            //         size: 'small'
+                            //     },
+                            //     on: {
+                            //         click: () => {
+                            //             this.remove(params.index)
+                            //         }
+                            //     }
+                            // }, '删除')
+                        ])
+                    }
+                    });
+					
+      
+                    return columns;
+                }
+            },
+			
+			
+			
+			//获取task列表
+			created:function(){
+            this.showtable();
+			},
+			
+			
+			methods:{
+				//显示字典列表
+				showtable(){
+					 axios.get(''+host+'/api/v1/dictitem')
+					  .then(res => {
+					   console.log("获取task列表")
+						console.log(res)
+						this.tableData3=res.data.data;
+						for( i=0;i<res.data.data.length;i++){
+							this.dictitem=[];
+							this.dictitem1=[];
+							for( j=0;j<JSON.parse(res.data.data[i].key_value).length;j++){		
+							var value=JSON.parse(res.data.data[i].key_value)[j].value;
+							var desc=JSON.parse(res.data.data[i].key_value)[j].desc;
+					             this.dictitem.push(value);
+								 this.dictitem1.push(desc);
+							  }
+							res.data.data[i].value=this.dictitem
+							res.data.data[i].desc=this.dictitem1
+												}
+					  })
+					  .catch(function (error) {
+					    console.log(error)
+					  });
+					
+				},
+				
+			//增加字典项
+	   handleAdd () {
+                this.index++;
+                this.key_value.items.push({
+                    value: '',
+                    index: this.index-1,
+                    status: 1
+                });},
+		handleAdd1 () {
+				         this.index++;
+				         this.key_value.items.push({
+				             value: '',
+				             index: this.key_value.items.length+1,
+				             status: 1
+				         });},
+				//删除字典项
+	   handleRemove (index) {
+                this.key_value.items[index].status = 0;
+            },
+			
+             //处理字典项
+			showdictitem(){
+				 axios.get(''+host+'/api/v1/dictitem')
+				  .then(res => {
+				    console.log(res)
+					this.tableData3=res.data.data;
+				   for(i=0;i<(JSON.parse(res.data.data[0].key_value)).length;i++){
+				   	var value;
+				   	value=(JSON.parse(res.data.data[0].key_value))[i];
+				   	this.test1.push(value)}
+				  })
+				  .catch(function (error) {
+				    console.log(error)
+				  });
+			},
+				
+				
+				//弹窗点击确定
+				ok () {
+					//新增字典
+					//循环字典项,拼成数组
+				   // this.key_value.items=[];
+					var obj1
+					 for(i=1;i<this.key_value.items.length;i++){					 
+					 obj1={
+				   "key":this.key_value.items[i].index,
+					"desc":this.key_value.items[i].desc,
+					"value":this.key_value.items[i].value	
+					}   
+					this.addform.key_value.push(obj1)
+					};
+					console.log("key_value的值");
+					console.log(this.addform.key_value); 
+					let obj = {
+						"dict_code":this.addform.dict_code,
+						"dict_name":this.addform.dict_name,
+						"key_value":this.addform.key_value
+					}
+					console.log("updateform的值")
+					//desc为空会定义为undefined
+					console.log(obj)
+					axios({
+                      url: ''+host+'/api/v1/dictitem/query',
+                      method: 'post',
+                      dataType: 'json',
+                      headers: {
+                          'Content-type': 'application/json;'
+                      },
+                      data: JSON.stringify(obj),
+                  }).then( (response)=>{
+                      console.log(response)					  
+					this.$Message.info({content: '新增成功',
+                     duration: 3} ,
+					 location.reload()
+					);	
+				})},
+				cancel () {
+				    this.$Message.info('已取消');
+					 location.reload()
+					
+				},
+				
+				//点击修改按钮
+				show (row) {
+                    this.modal2=true;
+					this.updateform=row;
+					this.key_value.items=[];
+					 var obj
+					 for(i=0;i<JSON.parse(row.key_value).length;i++){					 
+					 obj={
+					"index":JSON.parse(row.key_value)[i].key,
+					"value":JSON.parse(row.key_value)[i].value,
+					"desc":JSON.parse(row.key_value)[i].desc,
+					"status":1
+					}				
+					this.key_value.items.push(obj)			
+					 }
+				    console.log("返回字典项")
+					console.log(this.key_value.items)
+					console.log("列表反参")
+					console.log(this.updateform)
+            },
+			
+			//修改更新
+			 update() {
+                
+				  this.updateform.key_value=[];
+				   var obj1
+				   for(i=0;i<this.key_value.items.length;i++){					 
+				   obj1={
+				  "key":this.key_value.items[i].index,
+				  "value":this.key_value.items[i].value,
+				  "desc":this.key_value.items[i].desc
+				  } 
+				  this.updateform.key_value.push(obj1)
+				  };
+				 
+				 // console.log("拼接的key_value的值");
+				 // console.log(this.updateform.key_value);
+				   
+				  let obj = {
+					       "id":this.updateform.id,
+				  	"dict_code":this.updateform.dict_code,
+				  	"dict_name":this.updateform.dict_name,
+				  	"key_value":this.updateform.key_value
+				  }
+				  // console.log("修改传参");
+				  // console.log(obj);
+                 axios({
+                      url: ''+host+'/api/v1/dictitem/query',
+                      method: 'put',
+                      dataType: 'json',
+                      headers: {
+                          'Content-type': 'application/json;'
+                      },
+                      data: JSON.stringify(obj),
+                  }).then(function (response){
+			
+					  // console.log("修改之后反参")
+       //                console.log(response)
+                      alert("返回:"+response.data.data)
+                      location.reload()
+                  })
+                      .catch(function(error){
+                          console.log(error)
+                      })
+
+              },
+			
+			//删除字典(暂时不删)
+            remove : function (index)  {
+				 console.log('date1' + this.tableData3[index].id)
+				 var obj1={
+					 "id": this.tableData3[index].id,
+				      }
+				 console.log('ta'+JSON.stringify(obj1))
+				
+                this.tableData3.splice(index, 1);
+				axios({
+                      url: ''+host+'/api/v1/dictitem/query',
+                      method: 'delete',
+                      dataType: 'json',
+                      headers: {
+                          'Content-type': 'application/json;'
+                      },
+                      data: JSON.stringify(obj1),
+                  }).then(res => {
+                      if (res.status === 200) {
+                          alert('success')
+                          // 更新数据
+                          console.log(res)
+                          this.tableData3.splice(index, 1)
+                      } else {
+                          alert(res.message)
+                      }
+                  }).catch(function () {
+                      alert('服务连接出错了')
+                  })
+            },	
+			}
+			
+        });
+    </script>
+</body>
+
+</html>
