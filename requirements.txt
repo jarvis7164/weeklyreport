@@ -9,7 +9,7 @@ itsdangerous==1.1.0
 jdcal==1.4.1
 Jinja2==2.10.3
 MarkupSafe==1.1.1
-mod-wsgi==4.6.8+ap24vc15
+mod-wsgi==4.9.3
 openpyxl==3.0.0
 PyMySQL==0.9.3
 pytz==2019.3
